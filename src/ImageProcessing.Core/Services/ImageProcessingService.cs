@@ -4,7 +4,7 @@ namespace ImageProcessing.Core.Services;
 
 public class ImageProcessingService : IImageProcessingService
 {
-    public byte[,] ProcessImage(byte[,] pixels)
+    public byte[,] ProcessPixels(byte[,] pixels)
     {
         return pixels;
     }
