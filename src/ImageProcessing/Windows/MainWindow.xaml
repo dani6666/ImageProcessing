@@ -7,6 +7,21 @@
         mc:Ignorable="d"
         Title="Image processing" Height="450" Width="800">
     <Grid>
-
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Menu Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" >
+            <MenuItem Header="Image" >
+                <MenuItem Header="Load" Click="LoadImage_Click"/>
+                <MenuItem Header="Process" Click="ProcessImage_Click"/>
+            </MenuItem>
+        </Menu>
+        <Image x:Name="OriginalImage" Grid.Row="1" Grid.Column="0" Margin="5,5,5,5"/>
+        <Image x:Name="ProcessedImage" Grid.Row="1" Grid.Column="1" Margin="5,5,5,5"/>
     </Grid>
 </Window>
