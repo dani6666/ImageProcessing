@@ -15,7 +15,7 @@ namespace ImageProcessing.Windows
     public partial class MainWindow : Window
     {
         private IImageProcessingService _imageProcessingService;
-        private Bitmap? _image;
+        private Bitmap? _bitmap;
 
         public MainWindow(IImageProcessingService imageProcessingService)
         {
@@ -30,22 +30,28 @@ namespace ImageProcessing.Windows
             if (openFileDialog.ShowDialog() != true) return;
 
             var fileUri = new Uri(openFileDialog.FileName);
-            _image = new Bitmap(fileUri.OriginalString);
-            OriginalImage.Source = _image.ToImageBitmap();
-        }
+            _bitmap = new Bitmap(fileUri.OriginalString);
 
+            var rand = new Random();
+            using (Graphics graphics = Graphics.FromImage(_bitmap))
+            {
+                using (SolidBrush myBrush = new SolidBrush(System.Drawing.Color.FromArgb(255, 0, 0)))
+                {
+                    graphics.FillRectangle(myBrush, new Rectangle(rand.Next(0, _bitmap.Width),
+                        rand.Next(0, _bitmap.Height),
+                        rand.Next(100, 400),
+                        rand.Next(100, 500)));
+                }
+            }
+            OriginalImage.Source = _bitmap.ToBitmapImage();
+        }
         private void ProcessImage_Click(object sender, RoutedEventArgs e)
         {
-            if (_image is null) return;
+            if (_bitmap is null) return;
 
-            var ips = new ImageProcessingService();
-            ips.ProcessPixels(_image);
+            _imageProcessingService.ProcessPixels(_bitmap);
 
-            OriginalImage.Source = _image.ToImageBitmap();
-            //var originalImage = OriginalImage.Source as BitmapImage;
-            // int stride = (originalImage.PixelWidth * originalImage.Format.BitsPerPixel + 7) / 8;
-            // byte[] pixels = new byte[originalImage.PixelHeight * stride];
-            /// originalImage.CopyPixels(pixels, stride, 0);
+            OriginalImage.Source = _bitmap.ToBitmapImage();
         }
     }
 }

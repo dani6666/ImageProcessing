@@ -7,7 +7,7 @@ namespace ImageProcessing
 {
     public static class Extensions
     {
-        public static BitmapImage ToImageBitmap(this Bitmap bitmap)
+        public static BitmapImage ToBitmapImage(this Bitmap bitmap)
         {
             var stream = new MemoryStream();
             bitmap.Save(stream, ImageFormat.Bmp);
