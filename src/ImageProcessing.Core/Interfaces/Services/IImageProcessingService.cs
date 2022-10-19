@@ -4,5 +4,6 @@ namespace ImageProcessing.Core.Interfaces.Services;
 
 public interface IImageProcessingService
 {
-    Bitmap ProcessPixels(Bitmap pixels);
+    void DrawRectangle(Bitmap bitmap, Rectangle rectangle, Color color, bool fill);
+    void ProcessPixels(Bitmap pixels);
 }
