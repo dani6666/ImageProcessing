@@ -4,28 +4,29 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ImageProcessing.Core.Model;
 
 namespace ImageProcessing.Core.Services
 {
     internal static class ImageHelpers
     {
-        public static (byte R,byte G,byte B)[,] ConvertTo2d(byte[] inputArr, int width)
+        public static Pixel[,] ConvertTo2d(byte[] inputArr, int width)
         {
             int height = inputArr.Length / (3 * width);
 
-            (byte, byte, byte)[,] arr2d = new (byte,byte,byte)[height, width];
+            Pixel[,] arr2d = new Pixel[height, width];
             for (int r = 0; r < height; r++)
             {
                 for (int c = 0; c < width*3; c += 3)
                 {
                     int baseIndex = r * width * 3 + c;
-                    arr2d[r, c/3] = (inputArr[baseIndex + 2], inputArr[baseIndex + 1], inputArr[baseIndex]);
+                    arr2d[r, c/3] = new Pixel(inputArr[baseIndex + 2], inputArr[baseIndex + 1], inputArr[baseIndex]);
                 }
             }
             return arr2d;
         }
 
-        public static byte[] ConvertTo1d((byte R, byte G, byte B)[,] inputArr)
+        public static byte[] ConvertTo1d(Pixel[,] inputArr)
         {
             int rowsCount = inputArr.GetLength(0);
             int colsCount = inputArr.GetLength(1);
@@ -35,9 +36,9 @@ namespace ImageProcessing.Core.Services
             {
                 for (int c = 0; c < colsCount; c++)
                 {
-                    arr1d[i++] = inputArr[r, c].B;
-                    arr1d[i++] = inputArr[r, c].G;
-                    arr1d[i++] = inputArr[r, c].R;
+                    arr1d[i++] = inputArr[r, c].Blue;
+                    arr1d[i++] = inputArr[r, c].Green;
+                    arr1d[i++] = inputArr[r, c].Red;
 
                 }
             }

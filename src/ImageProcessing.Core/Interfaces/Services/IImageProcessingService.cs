@@ -4,5 +4,5 @@ namespace ImageProcessing.Core.Interfaces.Services;
 
 public interface IImageProcessingService
 {
-    Bitmap ProcessPixels(Bitmap pixels);
+    void ProcessPixels(Bitmap pixels);
 }
