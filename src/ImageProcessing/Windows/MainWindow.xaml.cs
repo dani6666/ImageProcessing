@@ -34,16 +34,14 @@ namespace ImageProcessing.Windows
             _bitmap = new Bitmap(fileUri.OriginalString);
 
             var rand = new Random();
-            using (var graphics = Graphics.FromImage(_bitmap))
-            {
-                using (var myBrush = new SolidBrush(Color.FromArgb(255, 0, 0)))
-                {
-                    graphics.FillRectangle(myBrush, new Rectangle(rand.Next(0, _bitmap.Width),
+            _imageProcessingService.DrawRectangle(_bitmap,
+                new Rectangle(rand.Next(0, _bitmap.Width),
                         rand.Next(0, _bitmap.Height),
                         rand.Next(100, 400),
-                        rand.Next(100, 500)));
-                }
-            }
+                        rand.Next(100, 500)),
+                Color.FromArgb(255, 0, 0),
+                true);
+
             OriginalImage.Source = _bitmap.ToBitmapImage();
         }
         private void ProcessImage_Click(object sender, RoutedEventArgs e)

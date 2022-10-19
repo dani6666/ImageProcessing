@@ -17,10 +17,10 @@ namespace ImageProcessing.Core.Services
             Pixel[,] arr2d = new Pixel[height, width];
             for (int r = 0; r < height; r++)
             {
-                for (int c = 0; c < width*3; c += 3)
+                for (int c = 0; c < width * 3; c += 3)
                 {
                     int baseIndex = r * width * 3 + c;
-                    arr2d[r, c/3] = new Pixel(inputArr[baseIndex + 2], inputArr[baseIndex + 1], inputArr[baseIndex]);
+                    arr2d[r, c / 3] = new Pixel(inputArr[baseIndex + 2], inputArr[baseIndex + 1], inputArr[baseIndex]);
                 }
             }
             return arr2d;
@@ -28,19 +28,14 @@ namespace ImageProcessing.Core.Services
 
         public static byte[] ConvertTo1d(Pixel[,] inputArr)
         {
-            int rowsCount = inputArr.GetLength(0);
-            int colsCount = inputArr.GetLength(1);
-            byte[] arr1d = new byte[rowsCount*colsCount*3];
-            var i = 0;
-            for (int r = 0; r < rowsCount; r++)
-            {
-                for (int c = 0; c < colsCount; c++)
-                {
-                    arr1d[i++] = inputArr[r, c].Blue;
-                    arr1d[i++] = inputArr[r, c].Green;
-                    arr1d[i++] = inputArr[r, c].Red;
 
-                }
+            byte[] arr1d = new byte[inputArr.Length * 3];
+            var i = 0;
+            foreach (var pixel in inputArr)
+            {
+                arr1d[i++] = pixel.Blue;
+                arr1d[i++] = pixel.Green;
+                arr1d[i++] = pixel.Red;
             }
             return arr1d;
         }
