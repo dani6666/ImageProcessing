@@ -1,6 +1,4 @@
 ﻿using System.Drawing;
-using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
 using ImageProcessing.Core.Interfaces.Services;
 using ImageProcessing.Core.Model;
 
@@ -86,51 +84,35 @@ public class ImageProcessingService : IImageProcessingService
 
     public void ProcessPixels(Bitmap bitmap)
     {
-        var data = bitmap.LockBits(
-            new Rectangle(0, 0, bitmap.Width, bitmap.Height),
-            ImageLockMode.ReadWrite,
-            bitmap.PixelFormat);
-        /*the size of the image in bytes */
-        int size = data.Stride * data.Height;
-        var buffer = new byte[size];
-
-        /*This overload copies data of /size/ into /data/ from location specified (/Scan0/)*/
-        Marshal.Copy(data.Scan0, buffer, 0, size);
-
-        var matrix = ImageHelpers.ConvertTo2d(buffer, bitmap.Width);
-
+        var matrix = bitmap.ToPixels();
         var rectangles = FindRectangles(matrix).ToList();
-
-        buffer = ImageHelpers.ConvertTo1d(matrix);
-
-        /* This override copies the data back into the location specified */
-        Marshal.Copy(buffer, 0, data.Scan0, buffer.Length);
-
-        bitmap.UnlockBits(data);
+        
         foreach (var rectangle in rectangles)
             DrawRectangle(bitmap, rectangle, Color.Black, false);
     }
 
+    // public void ProcessPixels(Bitmap bitmap)
+    // {
+    //     using var image = new BitmapLockAdapter(bitmap);
+    //     var matrix = image.ReadPixels();
+    //
+    //     foreach (var pixel in matrix)
+    //         pixel.Red = 255;
+    //     image.WritePixels(matrix);
+    // }
+
     public void DrawRectangle(Bitmap bitmap, Rectangle rectangle, Color color, bool fill)
     {
-        using (var graphics = Graphics.FromImage(bitmap))
+        using var graphics = Graphics.FromImage(bitmap);
+        if (fill)
         {
-            if (fill)
-            {
-                using (var brush = new SolidBrush(color))
-                {
-                    graphics.FillRectangle(brush, rectangle);
-                }
-            }
-
-            else
-            {
-                using (Pen pen = new Pen(color, 4))
-                {
-                    graphics.DrawRectangle(pen, rectangle);
-                }
-            }
-
+            using var brush = new SolidBrush(color);
+            graphics.FillRectangle(brush, rectangle);
+        }
+        else
+        {
+            using var pen = new Pen(color, 4);
+            graphics.DrawRectangle(pen, rectangle);
         }
     }
 }

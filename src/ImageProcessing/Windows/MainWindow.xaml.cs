@@ -2,13 +2,7 @@
 using Microsoft.Win32;
 using System;
 using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using ImageProcessing.Core.Services;
 using Color = System.Drawing.Color;
 
 namespace ImageProcessing.Windows
@@ -41,16 +35,17 @@ namespace ImageProcessing.Windows
                         rand.Next(100, 500)),
                 Color.FromArgb(255, 0, 0),
                 true);
-
+            
             OriginalImage.Source = _bitmap.ToBitmapImage();
         }
         private void ProcessImage_Click(object sender, RoutedEventArgs e)
         {
             if (_bitmap is null) return;
 
-            _imageProcessingService.ProcessPixels(_bitmap);
+            var bitmap = _bitmap.Clone(new Rectangle(0, 0, _bitmap.Width, _bitmap.Height), _bitmap.PixelFormat);
+            _imageProcessingService.ProcessPixels(bitmap);
 
-            ProcessedImage.Source = _bitmap.ToBitmapImage();
+            ProcessedImage.Source = bitmap.ToBitmapImage();
         }
     }
 }
