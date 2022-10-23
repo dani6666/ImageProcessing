@@ -1,6 +1,6 @@
 ﻿namespace ImageProcessing.Core.Model;
 
-public class PixelHsv
+public class PixelHsv : IPixel
 {
     /** Hue: 0 - 360 */
     public double H { get; set; }
