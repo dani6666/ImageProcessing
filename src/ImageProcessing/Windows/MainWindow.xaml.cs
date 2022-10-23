@@ -27,6 +27,12 @@ namespace ImageProcessing.Windows
             var fileUri = new Uri(openFileDialog.FileName);
             _bitmap = new Bitmap(fileUri.OriginalString);
 
+            OriginalImage.Source = _bitmap.ToBitmapImage();
+        }
+        private void ProcessImage_Click(object sender, RoutedEventArgs e)
+        {
+            if (_bitmap is null) return;
+
             var rand = new Random();
             _imageProcessingService.DrawRectangle(_bitmap,
                 new Rectangle(rand.Next(0, _bitmap.Width),
@@ -35,16 +41,19 @@ namespace ImageProcessing.Windows
                         rand.Next(100, 500)),
                 Color.FromArgb(255, 0, 0),
                 true);
-            
             OriginalImage.Source = _bitmap.ToBitmapImage();
+
+            var bitmap = _bitmap.Clone(new Rectangle(0, 0, _bitmap.Width, _bitmap.Height), _bitmap.PixelFormat);
+            _imageProcessingService.ProcessPixels(bitmap);
+            ProcessedImage.Source = bitmap.ToBitmapImage();
         }
-        private void ProcessImage_Click(object sender, RoutedEventArgs e)
+
+        private void RemoveNoise_Click(object sender, RoutedEventArgs e)
         {
             if (_bitmap is null) return;
 
             var bitmap = _bitmap.Clone(new Rectangle(0, 0, _bitmap.Width, _bitmap.Height), _bitmap.PixelFormat);
-            _imageProcessingService.ProcessPixels(bitmap);
-
+            _imageProcessingService.RemoveNoise(bitmap);
             ProcessedImage.Source = bitmap.ToBitmapImage();
         }
     }

@@ -19,7 +19,7 @@ internal class BitmapLockAdapter : IDisposable
         _data = bitmap.LockBits(
             new Rectangle(0, 0, _bitmap.Width, _bitmap.Height),
             ImageLockMode.ReadWrite,
-            bitmap.PixelFormat);
+            PixelFormat.Format24bppRgb);
         
         var size = _data.Stride * _data.Height;
         _buffer = new byte[size];
@@ -40,7 +40,6 @@ internal class BitmapLockAdapter : IDisposable
     public void WritePixels(Pixel[,] pixels)
     {
         var buffer = ImageHelpers.ConvertTo1d(pixels);
-        Debug.Assert(buffer.Length == _buffer.Length);
         _buffer = buffer;
     }
 }

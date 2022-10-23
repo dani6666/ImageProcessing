@@ -1,6 +1,8 @@
-﻿using System.Drawing;
-using ImageProcessing.Core.Interfaces.Services;
+﻿using ImageProcessing.Core.Interfaces.Services;
 using ImageProcessing.Core.Model;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
 
 namespace ImageProcessing.Core.Services;
 
@@ -84,22 +86,15 @@ public class ImageProcessingService : IImageProcessingService
 
     public void ProcessPixels(Bitmap bitmap)
     {
-        var matrix = bitmap.ToPixels();
-        var rectangles = FindRectangles(matrix).ToList();
-        
+        IEnumerable<Rectangle> rectangles;
+        using (var image = new BitmapLockAdapter(bitmap))
+        {
+            var matrix = image.ReadPixels();
+            rectangles = FindRectangles(matrix).ToList();
+        }
         foreach (var rectangle in rectangles)
             DrawRectangle(bitmap, rectangle, Color.Black, false);
     }
-
-    // public void ProcessPixels(Bitmap bitmap)
-    // {
-    //     using var image = new BitmapLockAdapter(bitmap);
-    //     var matrix = image.ReadPixels();
-    //
-    //     foreach (var pixel in matrix)
-    //         pixel.Red = 255;
-    //     image.WritePixels(matrix);
-    // }
 
     public void DrawRectangle(Bitmap bitmap, Rectangle rectangle, Color color, bool fill)
     {
@@ -114,5 +109,18 @@ public class ImageProcessingService : IImageProcessingService
             using var pen = new Pen(color, 4);
             graphics.DrawRectangle(pen, rectangle);
         }
+    }
+
+    public void RemoveNoise(Bitmap bitmap)
+    {
+        using var image = new BitmapLockAdapter(bitmap);
+        var matrix = image.ReadPixels();
+
+        image.WritePixels(
+            ImageHelpers.MorphologicalClosing(
+                ImageHelpers.MorphologicalOpening(matrix)
+            )
+        );
+
     }
 }
