@@ -32,12 +32,12 @@ internal class BitmapLockAdapter : IDisposable
         _bitmap.UnlockBits(_data);
     }
 
-    public Pixel[,] ReadPixels()
+    public PixelRgb[,] ReadPixels()
     {
         return ImageHelpers.ConvertTo2d(_buffer, _bitmap.Width);
     }
 
-    public void WritePixels(Pixel[,] pixels)
+    public void WritePixels(PixelRgb[,] pixels)
     {
         var buffer = ImageHelpers.ConvertTo1d(pixels);
         _buffer = buffer;

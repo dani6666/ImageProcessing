@@ -8,7 +8,7 @@ namespace ImageProcessing.Core.Services;
 
 public class ImageProcessingService : IImageProcessingService
 {
-    private static IEnumerable<Rectangle> FindRectangles(Pixel[,] pixels)
+    private static IEnumerable<Rectangle> FindRectangles(PixelRgb[,] pixels)
     {
         int rowsCount = pixels.GetLength(0);
         int colsCount = pixels.GetLength(1);
@@ -33,7 +33,7 @@ public class ImageProcessingService : IImageProcessingService
         }
     }
 
-    private static Rectangle? CheckForRectangle(Pixel[,] pixels, int r, int c)
+    private static Rectangle? CheckForRectangle(PixelRgb[,] pixels, int r, int c)
     {
         var rLast = pixels.GetLength(0) - 1;
         var cLast = pixels.GetLength(1) - 1;
@@ -84,16 +84,27 @@ public class ImageProcessingService : IImageProcessingService
         return new Rectangle(c, r, endC - c, endR - r);
     }
 
+    // public void ProcessPixels(Bitmap bitmap)
+    // {
+    //     IEnumerable<Rectangle> rectangles;
+    //     using (var image = new BitmapLockAdapter(bitmap))
+    //     {
+    //         var matrix = image.ReadPixels();
+    //         rectangles = FindRectangles(matrix).ToList();
+    //     }
+    //     foreach (var rectangle in rectangles)
+    //         DrawRectangle(bitmap, rectangle, Color.Black, false);
+    // }
+
     public void ProcessPixels(Bitmap bitmap)
     {
-        IEnumerable<Rectangle> rectangles;
-        using (var image = new BitmapLockAdapter(bitmap))
-        {
-            var matrix = image.ReadPixels();
-            rectangles = FindRectangles(matrix).ToList();
-        }
-        foreach (var rectangle in rectangles)
-            DrawRectangle(bitmap, rectangle, Color.Black, false);
+        using var image = new BitmapLockAdapter(bitmap);
+        var hsv = image.ReadPixels().AsHsv();
+        image.WritePixels(ImageHelpers
+            .FindMask(hsv, new PixelHsv(200, 0.3, 0.3), new PixelHsv(360, 1, 1))
+            .Or(ImageHelpers.FindMask(hsv, new PixelHsv(0, 0.3, 0.3), new PixelHsv(10, 1, 1)))
+            .AsRgb()
+        );
     }
 
     public void DrawRectangle(Bitmap bitmap, Rectangle rectangle, Color color, bool fill)
