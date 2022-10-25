@@ -13,7 +13,7 @@ public static class Extensions
         var data = bitmap.LockBits(
             new Rectangle(0, 0, bitmap.Width, bitmap.Height),
             ImageLockMode.ReadOnly,
-            bitmap.PixelFormat);
+            PixelFormat.Format24bppRgb);
         
         var size = data.Stride * data.Height;
         var buffer = new byte[size];

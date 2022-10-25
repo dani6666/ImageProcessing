@@ -20,6 +20,8 @@
             <MenuItem Header="Image" >
                 <MenuItem Header="Load" Click="LoadImage_Click"/>
                 <MenuItem Header="Process" Click="ProcessImage_Click"/>
+                <MenuItem Header="Remove noise" Click="RemoveNoise_Click"/>
+
             </MenuItem>
         </Menu>
         <TextBlock VerticalAlignment="Center" FontWeight="Bold" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Center" Text="Input image"/>

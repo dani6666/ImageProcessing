@@ -6,4 +6,5 @@ public interface IImageProcessingService
 {
     void DrawRectangle(Bitmap bitmap, Rectangle rectangle, Color color, bool fill);
     void ProcessPixels(Bitmap pixels);
+    void RemoveNoise(Bitmap pixels);
 }
