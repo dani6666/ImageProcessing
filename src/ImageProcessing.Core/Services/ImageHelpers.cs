@@ -135,5 +135,16 @@ namespace ImageProcessing.Core.Services
                     mask[r, c] = pixels[r, c].IsWithinBounds(lower, upper);
             return mask;
         }
+
+        public static PixelHsv[,] Cover(this PixelHsv[,] pixels, PixelHsv lower, PixelHsv upper, PixelHsv coverColor)
+        {
+            var rows = pixels.GetLength(0);
+            var cols = pixels.GetLength(1);
+            for (var r = 0; r < rows; r++)
+                for (var c = 0; c < cols; c++)
+                    if (pixels[r, c].IsWithinBounds(lower, upper))
+                        pixels[r, c].H = coverColor.H;
+            return pixels;
+        }
     }
 }

@@ -18,9 +18,9 @@ public class PixelHsv : IPixel
 
     public bool IsWithinBounds(PixelHsv lower, PixelHsv upper)
     {
-        return lower.H < H && H < upper.H &&
-               lower.S < S && S < upper.S &&
-               lower.V < V && V < upper.V;
+        return lower.H <= H && H <= upper.H &&
+               lower.S <= S && S <= upper.S &&
+               lower.V <= V && V <= upper.V;
     }
     
     public PixelRgb AsRgb()
