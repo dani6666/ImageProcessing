@@ -127,13 +127,7 @@ namespace ImageProcessing.Core.Services
 
         public static bool[,] FindMask(PixelHsv[,] pixels, PixelHsv lower, PixelHsv upper)
         {
-            var rows = pixels.GetLength(0);
-            var cols = pixels.GetLength(1);
-            var mask = new bool[rows, cols];
-            for (var r = 0; r < rows; r++)
-                for (var c = 0; c < cols; c++)
-                    mask[r, c] = pixels[r, c].IsWithinBounds(lower, upper);
-            return mask;
+            return pixels.Transform(hsv => hsv.IsWithinBounds(lower, upper));
         }
 
         public static PixelHsv[,] Cover(this PixelHsv[,] pixels, PixelHsv lower, PixelHsv upper, PixelHsv coverColor)

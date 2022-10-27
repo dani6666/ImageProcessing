@@ -101,8 +101,8 @@ public class ImageProcessingService : IImageProcessingService
         using var image = new BitmapLockAdapter(bitmap);
         var hsv = image.ReadPixels().AsHsv();
         image.WritePixels(hsv
-            .Cover(new PixelHsv(330, 0.3, 0.3), new PixelHsv(360, 1, 1), new PixelHsv(110, 0.95, 0.95))
-            .Cover(new PixelHsv(0, 0.3, 0.3), new PixelHsv(30, 1, 1), new PixelHsv(110, 0.95, 0.95))
+            .Cover(new PixelHsv(330, 0.3f, 0.3f), new PixelHsv(360, 1, 1), new PixelHsv(110, 0.95f, 0.95f))
+            .Cover(new PixelHsv(0, 0.3f, 0.3f), new PixelHsv(30, 1, 1), new PixelHsv(110, 0.95f, 0.95f))
             .AsRgb()
         );
     }
