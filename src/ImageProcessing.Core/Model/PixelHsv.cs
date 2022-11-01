@@ -3,13 +3,13 @@
 public class PixelHsv : IPixel
 {
     /** Hue: 0 - 360 */
-    public double H { get; set; }
+    public float H { get; set; }
     /** Saturation: 0 - 1 */
-    public double S { get; set; }
+    public float S { get; set; }
     /** Value: 0 - 1 */
-    public double V { get; set; }
+    public float V { get; set; }
 
-    public PixelHsv(double hue, double saturation, double value)
+    public PixelHsv(float hue, float saturation, float value)
     {
         H = hue;
         S = saturation;
@@ -18,9 +18,9 @@ public class PixelHsv : IPixel
 
     public bool IsWithinBounds(PixelHsv lower, PixelHsv upper)
     {
-        return lower.H < H && H < upper.H &&
-               lower.S < S && S < upper.S &&
-               lower.V < V && V < upper.V;
+        return lower.H <= H && H <= upper.H &&
+               lower.S <= S && S <= upper.S &&
+               lower.V <= V && V <= upper.V;
     }
     
     public PixelRgb AsRgb()

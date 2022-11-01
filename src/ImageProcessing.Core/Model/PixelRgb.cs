@@ -23,6 +23,6 @@ public class PixelRgb : IPixel
         var max = Math.Max(R, Math.Max(G, B));
         var min = Math.Min(R, Math.Min(G, B));
         var color = Color.FromArgb(R, G, B);
-        return new PixelHsv(color.GetHue(), max == 0 ? 0 : 1d - (1d * min / max), max / 255d);
+        return new PixelHsv(color.GetHue(), max == 0 ? 0 : 1f - (1f * min / max), max / 255f);
     } 
 }
