@@ -38,7 +38,7 @@ namespace ImageProcessing.Core.Model
                                    Math.Abs(TopRightLine.PerpendicularityMeter(BottomRightLine) - 1) < SharedSettings.FloatComparisonTolerance &&
                                    Math.Abs(BottomLeftLine.PerpendicularityMeter(TopLeftLine) - 1) < SharedSettings.FloatComparisonTolerance;
 
-        public float Area => throw new NotImplementedException();
-
+        public double Area => Math.Sqrt(Math.Pow(TopPoint.Column - RightPoint.Column, 2) + Math.Pow(TopPoint.Row - RightPoint.Row, 2)) * 
+                              Math.Sqrt(Math.Pow(TopPoint.Column - LeftPoint.Column, 2) + Math.Pow(TopPoint.Row - LeftPoint.Row, 2));
     }
 }

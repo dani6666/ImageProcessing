@@ -21,7 +21,7 @@ namespace ImageProcessing.Core.Model
         {
             var gradient = firstX == secondX ?
                 float.MaxValue :
-                (firstY - secondY) / (firstX - secondX);
+                (firstY - secondY) * 1f / (firstX - secondX);
 
             return new Line(gradient, firstY - gradient * firstX);
         }

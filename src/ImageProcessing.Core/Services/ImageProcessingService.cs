@@ -71,8 +71,7 @@ public class ImageProcessingService : IImageProcessingService
 
     private static Rectangle? GetInsideRectangle(List<Point> obj)
     {
-        var potentialRect = new Rectangle(obj.MaxBy(p => p.Row), obj.MinBy(p => p.Row), obj.MaxBy(p => p.Column),
-            obj.MinBy(p => p.Column));
+        var potentialRect = new Rectangle(obj.MaxBy(p => p.Row), obj.MinBy(p => p.Row), obj.MaxBy(p => p.Column), obj.MinBy(p => p.Column));
 
         while (!potentialRect.IsRectangle)
         {
@@ -213,7 +212,7 @@ public class ImageProcessingService : IImageProcessingService
         {
             var rect = GetInsideRectangle(obj);
 
-            if(rect != null && rect.Area > obj.Count * 0.9f)
+            if (rect != null && rect.Area > obj.Count * 0.9f)
                 foreach (var (r, c) in obj)
                 {
                     hsv[r, c].H = 110;
