@@ -3,6 +3,7 @@ using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using ImageProcessing.Core.Model;
 using ImageProcessing.Core.Services;
+using Rectangle = System.Drawing.Rectangle;
 
 namespace ImageProcessing.Core;
 
