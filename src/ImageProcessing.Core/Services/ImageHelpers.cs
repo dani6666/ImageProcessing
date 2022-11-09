@@ -140,5 +140,29 @@ namespace ImageProcessing.Core.Services
                         pixels[r, c].H = coverColor.H;
             return pixels;
         }
+
+        public static Dictionary<(PixelHsv, PixelHsv), int> CreateHistogram(this PixelHsv[,] pixels, List<(PixelHsv, PixelHsv)> buckets)
+        {
+            var rows = pixels.GetLength(0);
+            var cols = pixels.GetLength(1);
+            var histogram = new Dictionary<(PixelHsv, PixelHsv), int>();
+            foreach(var bucket in buckets)
+                histogram[bucket] = 0;
+            
+            for (var r = 0; r < rows; r++)
+                for (var c = 0; c < cols; c++)
+                {
+                    foreach (var range in buckets)
+                    {
+                        var pixel = pixels[r, c];
+                        if (pixels[r, c].IsWithinBounds(range.Item1, range.Item2))
+                        {
+                            histogram[range] +=1;
+                            break;
+                        }
+                    }
+                }
+            return histogram;
+        }
     }
 }

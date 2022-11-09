@@ -2,8 +2,14 @@
 using Microsoft.Win32;
 using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Media3D;
+using Brushes = System.Drawing.Brushes;
 using Color = System.Drawing.Color;
+using LinearGradientBrush = System.Drawing.Drawing2D.LinearGradientBrush;
+using Point = System.Drawing.Point;
 
 namespace ImageProcessing.Windows
 {
@@ -86,6 +92,35 @@ namespace ImageProcessing.Windows
             _imageProcessingService.FindTriangles(bitmap);
             ProcessedImage.Source = bitmap.ToBitmapImage();
         }
+        private void ShowStats_Click(object sender, RoutedEventArgs e)
+        {
+            if (_bitmap is null) return;
+
+            var histogram = _imageProcessingService.GetColorStats(_bitmap, 9);
+            var emptyBitmap = new Bitmap(1000, 1000);
+            using var graphics = Graphics.FromImage(emptyBitmap);
+            using var whiteBrush = new SolidBrush(Color.FromArgb(255, 255, 255));
+            graphics.FillRectangle(whiteBrush, new Rectangle(0, 0,_bitmap.Width,_bitmap.Width));
+            var i = 0;
+            foreach(var entry in histogram)
+            {
+                var lower = entry.Key.Item1.AsRgb();
+                var upper = entry.Key.Item2.AsRgb();
+                var brush = new LinearGradientBrush(
+                    new Point(0, 10),
+                    new Point(200, 10),
+                    Color.FromArgb(lower.R, lower.G, lower.B),
+                    Color.FromArgb(upper.R, upper.G, upper.B));
+                graphics.FillRectangle(brush, 0, 100 * i, 200, 50);
+                RectangleF rectf = new RectangleF(250, 100 * i, 500, 50);
+                graphics.DrawString("Hue range " + entry.Key.Item1.H + " - " + entry.Key.Item2.H + ": " + entry.Value.ToString(), 
+                    new Font("Tahoma", 18), Brushes.Black, rectf);
+                i++;
+            }
+
+            ProcessedImage.Source = emptyBitmap.ToBitmapImage();
+        }
+
         private void RemoveNoise_Click(object sender, RoutedEventArgs e)
         {
             if (_bitmap is null) return;

@@ -23,7 +23,7 @@
                 <MenuItem Header="Find ovals" Click="FindOvals_Click"/>
                 <MenuItem Header="Find triangles" Click="FindTriangles_Click"/>
                 <MenuItem Header="Remove noise" Click="RemoveNoise_Click"/>
-
+                <MenuItem Header="Show stats" Click="ShowStats_Click"/>
             </MenuItem>
         </Menu>
         <TextBlock VerticalAlignment="Center" FontWeight="Bold" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Center" Text="Input image"/>
