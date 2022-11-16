@@ -211,8 +211,7 @@ public class ImageProcessingService : IImageProcessingService
         foreach (var obj in objects)
         {
             var rect = GetInsideRectangle(obj);
-
-            if (rect != null && rect.Area > obj.Count * 0.9f)
+            if (rect != null && rect.Area > obj.Count * 0.85f)
                 foreach (var (r, c) in obj)
                 {
                     hsv[r, c].H = 110;
