@@ -1,6 +1,7 @@
 ﻿using ImageProcessing.Core.Interfaces.Services;
 using ImageProcessing.Core.Model;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using Point = ImageProcessing.Core.Model.Point;
@@ -111,6 +112,62 @@ public class ImageProcessingService : IImageProcessingService
         return potentialRect;
     }
 
+    private Ellipse GetBoundingEllipse(List<Point> obj)
+    {
+        var wrappingRect = new Rectangle(obj.MaxBy(p => p.Row), obj.MinBy(p => p.Row), obj.MaxBy(p => p.Column), obj.MinBy(p => p.Column));
+
+        var horizontalDiagonalLength = wrappingRect.HorizontalDiagonalLength;
+        var verticalDiagonalLength = wrappingRect.VerticalDiagonalLength;
+        var horizontalDiagonal = wrappingRect.HorizontalDiagonal;
+        var verticalDiagonal = wrappingRect.VerticalDiagonal;
+        // src: https://www.topcoder.com/thrive/articles/Geometry%20Concepts%20part%202:%20%20Line%20Intersection%20and%20its%20Applications
+        //var det = horizontalDiagonal.Gradient - verticalDiagonal.Gradient;
+        //int centerX = (int)((int) (verticalDiagonal.Intercept - horizontalDiagonal.Intercept) / det);
+        //int centerY = (int) ((int) -(-horizontalDiagonal.Gradient * verticalDiagonal.Intercept + verticalDiagonal.Gradient * horizontalDiagonal.Intercept) / det);
+
+        Size size = new Size(horizontalDiagonalLength, ???);
+        float angle = -(float)(Math.Atan2(wrappingRect.TopPoint.Row - wrappingRect.BottomPoint.Row, wrappingRect.BottomPoint.Column - wrappingRect.TopPoint.Column) * 180f / Math.PI);
+        System.Drawing.Point center = new System.Drawing.Point((wrappingRect.TopPoint.Column + wrappingRect.BottomPoint.Column) / 2, (wrappingRect.TopPoint.Row + wrappingRect.BottomPoint.Row) / 2);
+        //System.Drawing.Point center = new System.Drawing.Point(centerX, centerY);
+
+        int h2 = size.Height / 2;
+        int w2 = size.Width / 2;
+
+        System.Drawing.Rectangle rect = new System.Drawing.Rectangle(new System.Drawing.Point(center.X - w2, center.Y - h2), size);
+
+        return new Ellipse(rect, angle, center);
+    }
+
+    private Ellipse GetBoundingCircle (List<Point> obj)
+    {
+
+        var points = new Point[] { obj.MaxBy(p => p.Row), obj.MinBy(p => p.Row), obj.MaxBy(p => p.Column), obj.MinBy(p => p.Column) };
+        var diameter = 0;
+        var p1 = points[0];
+        var p2 = points[1];
+        for(int i=0; i < points.Length; i++)
+        {
+            for(int j=i; j < points.Length; j++)
+            {
+                var dist = Point.CalculateDistance(points[i], points[j]);
+                if (dist > diameter)
+                {
+                    diameter = dist;
+                    p1 = points[i];
+                    p2 = points[j];
+                }
+            }
+        }
+        Size size = new Size(diameter, diameter);
+        System.Drawing.Point center = new System.Drawing.Point((p1.Column + p2.Column) / 2, (p1.Row + p2.Row) / 2);
+
+        int h2 = size.Height / 2;
+        int w2 = size.Width / 2;
+
+        System.Drawing.Rectangle rect = new System.Drawing.Rectangle(new System.Drawing.Point(center.X - w2, center.Y - h2), size);
+        return new Ellipse(rect, 0f, center);
+    }
+
     //private static IEnumerable<Rectangle> FindRectangles(PixelRgb[,] pixels)
     //{
     //    int rowsCount = pixels.GetLength(0);
@@ -201,28 +258,48 @@ public class ImageProcessingService : IImageProcessingService
 
     public void ProcessPixels(Bitmap bitmap)
     {
-        using var image = new BitmapLockAdapter(bitmap);
-        var hsv = image.ReadPixels().AsHsv();
+        var ellipses = new List<Ellipse>();
 
-        var objects = DetectObjects(hsv,
-            p => p.IsWithinBounds(new PixelHsv(330, 0.3f, 0.3f), new PixelHsv(360, 1, 1)) ||
-                 p.IsWithinBounds(new PixelHsv(0, 0.3f, 0.3f), new PixelHsv(30, 1, 1)));
-
-        foreach (var obj in objects)
+        using (var image = new BitmapLockAdapter(bitmap))
         {
-            var rect = GetInsideRectangle(obj);
+            var hsv = image.ReadPixels().AsHsv();
 
-            if (rect != null && rect.Area > obj.Count * 0.9f)
-                foreach (var (r, c) in obj)
+            var objects = DetectObjects(hsv,
+                p => p.IsWithinBounds(new PixelHsv(330, 0.3f, 0.3f), new PixelHsv(360, 1, 1)) ||
+                     p.IsWithinBounds(new PixelHsv(0, 0.3f, 0.3f), new PixelHsv(30, 1, 1)));
+
+            foreach (var obj in objects)
+            {
+                var rect = GetInsideRectangle(obj);
+
+                if (rect != null && rect.Area > obj.Count * 0.9f)
                 {
-                    hsv[r, c].H = 110;
+                    foreach (var (r, c) in obj)
+                    {
+                        hsv[r, c].H = 110;
+                    }
                 }
+                var ellipse = GetBoundingCircle(obj);
+                ellipses.Add(ellipse);
+            }
+            image.WritePixels(hsv
+                //.Cover(new PixelHsv(330, 0.3f, 0.3f), new PixelHsv(360, 1, 1), new PixelHsv(110, 0.95f, 0.95f))
+                //.Cover(new PixelHsv(0, 0.3f, 0.3f), new PixelHsv(30, 1, 1), new PixelHsv(110, 0.95f, 0.95f))
+                .AsRgb()
+            );
         }
-        image.WritePixels(hsv
-            //.Cover(new PixelHsv(330, 0.3f, 0.3f), new PixelHsv(360, 1, 1), new PixelHsv(110, 0.95f, 0.95f))
-            //.Cover(new PixelHsv(0, 0.3f, 0.3f), new PixelHsv(30, 1, 1), new PixelHsv(110, 0.95f, 0.95f))
-            .AsRgb()
-        );
+
+        foreach(var e in ellipses)
+        {
+            using var pen = new Pen(Color.Blue, 2);
+            using var graphics = Graphics.FromImage(bitmap);
+            //graphics.TranslateTransform(e.Center.X, e.Center.Y);
+            //graphics.RotateTransform(e.Angle);
+            //graphics.TranslateTransform(-e.Center.X, -e.Center.Y);
+            //graphics.DrawRectangle(pen, e.BoundingRect);
+            graphics.DrawEllipse(pen, e.BoundingRect);
+            //graphics.ResetTransform();
+        }
     }
 
     //public void DrawRectangle(Bitmap bitmap, Rectangle rectangle, Color color, bool fill)
