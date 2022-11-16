@@ -20,6 +20,8 @@ namespace ImageProcessing.Core.Model
             RightPoint = rightPoint;
             LeftPoint = leftPoint;
         }
+        public Line VerticalDiagonal => Line.FromPoints(TopPoint.Column, TopPoint.Row, BottomPoint.Column, BottomPoint.Row);
+        public Line HorizontalDiagonal => Line.FromPoints(LeftPoint.Column, LeftPoint.Row, RightPoint.Column, RightPoint.Row);
 
         public Line TopRightLine =>
             Line.FromPoints(TopPoint.Column, TopPoint.Row, RightPoint.Column, RightPoint.Row);
@@ -40,5 +42,15 @@ namespace ImageProcessing.Core.Model
 
         public double Area => Math.Sqrt(Math.Pow(TopPoint.Column - RightPoint.Column, 2) + Math.Pow(TopPoint.Row - RightPoint.Row, 2)) * 
                               Math.Sqrt(Math.Pow(TopPoint.Column - LeftPoint.Column, 2) + Math.Pow(TopPoint.Row - LeftPoint.Row, 2));
+
+        public int VerticalDiagonalLength => Point.CalculateDistance(TopPoint, BottomPoint);
+
+        public int HorizontalDiagonalLength => Point.CalculateDistance(LeftPoint, RightPoint);
+        public int TopRightLength => Point.CalculateDistance(TopPoint, RightPoint);
+        public int TopLeftLength => Point.CalculateDistance(TopPoint, LeftPoint);
+        public int BottomRightLength => Point.CalculateDistance(BottomPoint, RightPoint);
+        public int BottomLeftLength => Point.CalculateDistance(BottomPoint, LeftPoint);
+
+
     }
 }
