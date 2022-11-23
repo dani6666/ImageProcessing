@@ -34,6 +34,44 @@ public class ImageProcessingService : IImageProcessingService
     private static List<Point> DetectObject(PixelHsv[,] pixels, Predicate<PixelHsv> condition, int row, int column) =>
         DetectObject(pixels, condition, row, column, new List<Point>());
 
+    private (Point extremeP1, Point extremeP2, int distance) GetExtremePoints(List<Point> obj, PixelHsv[,] pixels, Predicate<PixelHsv> condition)
+    {
+        Point extremeP1 = new Point();
+        Point extremeP2 = new Point();
+        var longestDistance = 0;
+        var boundingPoints = new List<Point>();
+        for (int i = 0; i < obj.Count; i++)
+        {
+            var p = obj[i];
+            if (p.Row != 0 && p.Row != pixels.GetLength(0) && p.Column != 0 && p.Column != pixels.GetLength(1) &&
+                condition(pixels[p.Row, p.Column - 1]) &&
+                condition(pixels[p.Row, p.Column + 1]) &&
+                condition(pixels[p.Row - 1, p.Column]) &&
+                condition(pixels[p.Row + 1, p.Column]))
+                continue;
+            boundingPoints.Add(p);
+        }
+
+        for (int i = 0; i < boundingPoints.Count; i++)
+        {
+            var p1 = boundingPoints[i];
+
+
+            for (int j= i+20; j < boundingPoints.Count; j++)
+            {
+                var p2 = boundingPoints[j];
+                var dist = Point.CalculateDistance(p1, p2);
+                if(dist > longestDistance)
+                {
+                    extremeP1 = p1;
+                    extremeP2 = p2;
+                    longestDistance = dist;
+                }
+            }
+        }
+
+        return (extremeP1, extremeP2, longestDistance);
+    }
     private static List<Point> DetectObject(PixelHsv[,] pixels, Predicate<PixelHsv> condition, int startingRow, int startingColumn, List<Point> result)
     {
         var rowsCount = pixels.GetLength(0);
@@ -112,52 +150,36 @@ public class ImageProcessingService : IImageProcessingService
         return potentialRect;
     }
 
-    private Ellipse GetBoundingEllipse(List<Point> obj)
+    //private Ellipse GetBoundingEllipse(List<Point> obj)
+    //{
+    //    var wrappingRect = new Rectangle(obj.MaxBy(p => p.Row), obj.MinBy(p => p.Row), obj.MaxBy(p => p.Column), obj.MinBy(p => p.Column));
+
+    //    var horizontalDiagonalLength = wrappingRect.HorizontalDiagonalLength;
+    //    var verticalDiagonalLength = wrappingRect.VerticalDiagonalLength;
+    //    var horizontalDiagonal = wrappingRect.HorizontalDiagonal;
+    //    var verticalDiagonal = wrappingRect.VerticalDiagonal;
+    //    // src: https://www.topcoder.com/thrive/articles/Geometry%20Concepts%20part%202:%20%20Line%20Intersection%20and%20its%20Applications
+    //    //var det = horizontalDiagonal.Gradient - verticalDiagonal.Gradient;
+    //    //int centerX = (int)((int) (verticalDiagonal.Intercept - horizontalDiagonal.Intercept) / det);
+    //    //int centerY = (int) ((int) -(-horizontalDiagonal.Gradient * verticalDiagonal.Intercept + verticalDiagonal.Gradient * horizontalDiagonal.Intercept) / det);
+
+    //    Size size = new Size(horizontalDiagonalLength, ???);
+    //    float angle = -(float)(Math.Atan2(wrappingRect.TopPoint.Row - wrappingRect.BottomPoint.Row, wrappingRect.BottomPoint.Column - wrappingRect.TopPoint.Column) * 180f / Math.PI);
+    //    System.Drawing.Point center = new System.Drawing.Point((wrappingRect.TopPoint.Column + wrappingRect.BottomPoint.Column) / 2, (wrappingRect.TopPoint.Row + wrappingRect.BottomPoint.Row) / 2);
+    //    //System.Drawing.Point center = new System.Drawing.Point(centerX, centerY);
+
+    //    int h2 = size.Height / 2;
+    //    int w2 = size.Width / 2;
+
+    //    System.Drawing.Rectangle rect = new System.Drawing.Rectangle(new System.Drawing.Point(center.X - w2, center.Y - h2), size);
+
+    //    return new Ellipse(rect, angle, center);
+    //}
+
+    private Ellipse GetBoundingCircle (List<Point> obj, PixelHsv[,] pixels, Predicate<PixelHsv> condition)
     {
-        var wrappingRect = new Rectangle(obj.MaxBy(p => p.Row), obj.MinBy(p => p.Row), obj.MaxBy(p => p.Column), obj.MinBy(p => p.Column));
+        var (p1, p2, diameter) = GetExtremePoints(obj, pixels, condition);
 
-        var horizontalDiagonalLength = wrappingRect.HorizontalDiagonalLength;
-        var verticalDiagonalLength = wrappingRect.VerticalDiagonalLength;
-        var horizontalDiagonal = wrappingRect.HorizontalDiagonal;
-        var verticalDiagonal = wrappingRect.VerticalDiagonal;
-        // src: https://www.topcoder.com/thrive/articles/Geometry%20Concepts%20part%202:%20%20Line%20Intersection%20and%20its%20Applications
-        //var det = horizontalDiagonal.Gradient - verticalDiagonal.Gradient;
-        //int centerX = (int)((int) (verticalDiagonal.Intercept - horizontalDiagonal.Intercept) / det);
-        //int centerY = (int) ((int) -(-horizontalDiagonal.Gradient * verticalDiagonal.Intercept + verticalDiagonal.Gradient * horizontalDiagonal.Intercept) / det);
-
-        Size size = new Size(horizontalDiagonalLength, ???);
-        float angle = -(float)(Math.Atan2(wrappingRect.TopPoint.Row - wrappingRect.BottomPoint.Row, wrappingRect.BottomPoint.Column - wrappingRect.TopPoint.Column) * 180f / Math.PI);
-        System.Drawing.Point center = new System.Drawing.Point((wrappingRect.TopPoint.Column + wrappingRect.BottomPoint.Column) / 2, (wrappingRect.TopPoint.Row + wrappingRect.BottomPoint.Row) / 2);
-        //System.Drawing.Point center = new System.Drawing.Point(centerX, centerY);
-
-        int h2 = size.Height / 2;
-        int w2 = size.Width / 2;
-
-        System.Drawing.Rectangle rect = new System.Drawing.Rectangle(new System.Drawing.Point(center.X - w2, center.Y - h2), size);
-
-        return new Ellipse(rect, angle, center);
-    }
-
-    private Ellipse GetBoundingCircle (List<Point> obj)
-    {
-
-        var points = new Point[] { obj.MaxBy(p => p.Row), obj.MinBy(p => p.Row), obj.MaxBy(p => p.Column), obj.MinBy(p => p.Column) };
-        var diameter = 0;
-        var p1 = points[0];
-        var p2 = points[1];
-        for(int i=0; i < points.Length; i++)
-        {
-            for(int j=i; j < points.Length; j++)
-            {
-                var dist = Point.CalculateDistance(points[i], points[j]);
-                if (dist > diameter)
-                {
-                    diameter = dist;
-                    p1 = points[i];
-                    p2 = points[j];
-                }
-            }
-        }
         Size size = new Size(diameter, diameter);
         System.Drawing.Point center = new System.Drawing.Point((p1.Column + p2.Column) / 2, (p1.Row + p2.Row) / 2);
 
@@ -244,18 +266,6 @@ public class ImageProcessingService : IImageProcessingService
     //    return new Rectangle(c, r, endC - c, endR - r);
     //}
 
-    // public void ProcessPixels(Bitmap bitmap)
-    // {
-    //     IEnumerable<Rectangle> rectangles;
-    //     using (var image = new BitmapLockAdapter(bitmap))
-    //     {
-    //         var matrix = image.ReadPixels();
-    //         rectangles = FindRectangles(matrix).ToList();
-    //     }
-    //     foreach (var rectangle in rectangles)
-    //         DrawRectangle(bitmap, rectangle, Color.Black, false);
-    // }
-
     public void ProcessPixels(Bitmap bitmap)
     {
         var ellipses = new List<Ellipse>();
@@ -263,10 +273,9 @@ public class ImageProcessingService : IImageProcessingService
         using (var image = new BitmapLockAdapter(bitmap))
         {
             var hsv = image.ReadPixels().AsHsv();
-
-            var objects = DetectObjects(hsv,
-                p => p.IsWithinBounds(new PixelHsv(330, 0.3f, 0.3f), new PixelHsv(360, 1, 1)) ||
-                     p.IsWithinBounds(new PixelHsv(0, 0.3f, 0.3f), new PixelHsv(30, 1, 1)));
+            Predicate<PixelHsv> predicate = p => p.IsWithinBounds(new PixelHsv(330, 0.3f, 0.3f), new PixelHsv(360, 1, 1)) ||
+                     p.IsWithinBounds(new PixelHsv(0, 0.3f, 0.3f), new PixelHsv(30, 1, 1));
+            var objects = DetectObjects(hsv, predicate);
 
             foreach (var obj in objects)
             {
@@ -279,7 +288,8 @@ public class ImageProcessingService : IImageProcessingService
                         hsv[r, c].H = 110;
                     }
                 }
-                var ellipse = GetBoundingCircle(obj);
+
+                var ellipse = GetBoundingCircle(obj, hsv, predicate);
                 ellipses.Add(ellipse);
             }
             image.WritePixels(hsv
