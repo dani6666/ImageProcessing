@@ -8,6 +8,14 @@ namespace ImageProcessing.Core.Model
 {
     public struct Point : IComparable
     {
+        public static int CalculateDistance(Point p1, Point p2)
+        {
+            return (int)Math.Sqrt(
+                (p1.Row - p2.Row) * (p1.Row - p2.Row) +
+                (p2.Column - p1.Column) * (p2.Column - p1.Column));
+        }
+
+
         public int Row;
         public int Column;
 
