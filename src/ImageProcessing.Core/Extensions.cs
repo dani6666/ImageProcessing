@@ -78,4 +78,13 @@ public static class Extensions
         }
         return result;
     }
+    
+    /** Pair up each point with each other point and check the absolute manhattan distance */
+    internal static IEnumerable<(Model.Point, Model.Point, int)> Pairwise(this List<Model.Point> points)
+    {
+        return points.Count == 1
+            ? new [] { (points[0], points[0], 0) }
+            : points.SelectMany(_ => points, (p1, p2) => (p1, p2, Math.Abs(p1.Row - p2.Row) + Math.Abs(p1.Column - p2.Column)))
+              .Where(t => t.p1 != t.p2);
+    }
 }

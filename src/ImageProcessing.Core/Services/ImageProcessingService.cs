@@ -111,6 +111,55 @@ public class ImageProcessingService : IImageProcessingService
         return potentialRect;
     }
 
+    private static Triangle? FindTriangle(List<Point> obj)
+    {
+        var vertices = SimpleVertices(obj);
+        return vertices.Count == 3
+            ? new Triangle(vertices[0], vertices[1], vertices[2])
+            : null;
+    }
+    
+    /**
+     *  Search for vertices based on list of points
+     */
+    private static List<Point> SimpleVertices(List<Point> obj)
+    {
+        var boundRMin = obj.MinBy(p => p.Row).Row;
+        var boundRMax = obj.MaxBy(p => p.Row).Row;
+        var boundCMin = obj.MinBy(p => p.Column).Column;
+        var boundCMax = obj.MaxBy(p => p.Column).Column;
+
+        var points = Array.Empty<Point>()
+            .Concat(FindMostDifferentPoints(obj.FindAll(p => p.Row == boundRMin)))
+            .Concat(FindMostDifferentPoints(obj.FindAll(p => p.Row == boundRMax)))
+            .Concat(FindMostDifferentPoints(obj.FindAll(p => p.Column == boundCMin)))
+            .Concat(FindMostDifferentPoints(obj.FindAll(p => p.Column == boundCMax)))
+            .Distinct()
+            .ToList();
+
+        while (points.Pairwise().Any(t => t.Item3 < 6))
+        {
+            var pairsToMerge = points.Pairwise().Where(t => t.Item1 != t.Item2 && t.Item3 < 6).ToHashSet();
+            var merged = pairsToMerge
+                .Select(t => new Point((t.Item1.Row + t.Item2.Row) / 2, (t.Item1.Column + t.Item2.Column) / 2))
+                .ToHashSet();
+            var removed = pairsToMerge.Select(t => t.Item1)
+                .Concat(pairsToMerge.Select(t => t.Item2))
+                .ToHashSet();
+
+            points = points.Where(p => !removed.Contains(p)).Concat(merged).ToList();
+        }
+
+        return points;
+    }
+
+    /** Find the most different two points from a list of points */
+    private static IEnumerable<Point> FindMostDifferentPoints(List<Point> points)
+    {
+        var (p1, p2, _) = points.Pairwise().MaxBy(p => p.Item3);
+        return new [] { p1, p2 };
+    }
+
     //private static IEnumerable<Rectangle> FindRectangles(PixelRgb[,] pixels)
     //{
     //    int rowsCount = pixels.GetLength(0);
@@ -210,18 +259,29 @@ public class ImageProcessingService : IImageProcessingService
 
         foreach (var obj in objects)
         {
-            var rect = GetInsideRectangle(obj);
-            if (rect != null && rect.Area > obj.Count * 0.85f)
-                foreach (var (r, c) in obj)
-                {
-                    hsv[r, c].H = 110;
-                }
+            // var rect = GetInsideRectangle(obj);
+            // if (rect != null && rect.Area > obj.Count * 0.85f)
+            //     foreach (var (r, c) in obj)
+            //     {
+            //         hsv[r, c].H = 110;
+            //     }
+            
+            // Triangles
+            var triangle = FindTriangle(obj);
+            if (triangle != null)
+            {
+                using var pen = new Pen(Color.Black, 20);
+                using var graphics = Graphics.FromImage(bitmap);
+                graphics.DrawLine(pen, triangle.A.Row, triangle.A.Column, triangle.B.Row, triangle.B.Column);
+                graphics.DrawLine(pen, triangle.A.Row, triangle.A.Column, triangle.C.Row, triangle.C.Column);
+                graphics.DrawLine(pen, triangle.C.Row, triangle.C.Column, triangle.B.Row, triangle.B.Column);
+            }
         }
-        image.WritePixels(hsv
-            //.Cover(new PixelHsv(330, 0.3f, 0.3f), new PixelHsv(360, 1, 1), new PixelHsv(110, 0.95f, 0.95f))
-            //.Cover(new PixelHsv(0, 0.3f, 0.3f), new PixelHsv(30, 1, 1), new PixelHsv(110, 0.95f, 0.95f))
-            .AsRgb()
-        );
+        // image.WritePixels(hsv
+        //     //.Cover(new PixelHsv(330, 0.3f, 0.3f), new PixelHsv(360, 1, 1), new PixelHsv(110, 0.95f, 0.95f))
+        //     //.Cover(new PixelHsv(0, 0.3f, 0.3f), new PixelHsv(30, 1, 1), new PixelHsv(110, 0.95f, 0.95f))
+        //     .AsRgb()
+        // );
     }
 
     //public void DrawRectangle(Bitmap bitmap, Rectangle rectangle, Color color, bool fill)
