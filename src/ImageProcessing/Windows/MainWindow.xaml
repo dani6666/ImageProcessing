@@ -19,7 +19,9 @@
         <Menu Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" >
             <MenuItem Header="Image" >
                 <MenuItem Header="Load" Click="LoadImage_Click"/>
-                <MenuItem Header="Process" Click="ProcessImage_Click"/>
+                <MenuItem Header="Find rectangles" Click="FindRectangles_Click"/>
+                <MenuItem Header="Find ovals" Click="FindOvals_Click"/>
+                <MenuItem Header="Find triangles" Click="FindTriangles_Click"/>
                 <MenuItem Header="Remove noise" Click="RemoveNoise_Click"/>
 
             </MenuItem>
