@@ -42,5 +42,28 @@ namespace ImageProcessing.Core.Model
             return Row - point.Row;
 
         }
+        
+        public override bool Equals(object? ob)
+        {
+            return ob switch
+            {
+                Point other => Row == other.Row && Column == other.Column,
+                _ => false
+            };
+        }
+
+        public override int GetHashCode(){
+            return Row.GetHashCode() ^ Column.GetHashCode();
+        }
+
+        public static bool operator ==(Point left, Point right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(Point left, Point right)
+        {
+            return !(left == right);
+        }
     }
 }

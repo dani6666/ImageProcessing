@@ -83,7 +83,7 @@ namespace ImageProcessing.Windows
             // OriginalImage.Source = _bitmap.ToBitmapImage();
 
             var bitmap = _bitmap.Clone(new Rectangle(0, 0, _bitmap.Width, _bitmap.Height), _bitmap.PixelFormat);
-            //_imageProcessingService.ProcessPixels(bitmap);
+            _imageProcessingService.FindTriangles(bitmap);
             ProcessedImage.Source = bitmap.ToBitmapImage();
         }
         private void RemoveNoise_Click(object sender, RoutedEventArgs e)
