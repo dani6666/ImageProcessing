@@ -29,7 +29,7 @@ namespace ImageProcessing.Windows
 
             OriginalImage.Source = _bitmap.ToBitmapImage();
         }
-        private void ProcessImage_Click(object sender, RoutedEventArgs e)
+        private void FindRectangles_Click(object sender, RoutedEventArgs e)
         {
             if (_bitmap is null) return;
 
@@ -44,10 +44,48 @@ namespace ImageProcessing.Windows
             // OriginalImage.Source = _bitmap.ToBitmapImage();
 
             var bitmap = _bitmap.Clone(new Rectangle(0, 0, _bitmap.Width, _bitmap.Height), _bitmap.PixelFormat);
-            _imageProcessingService.ProcessPixels(bitmap);
+            _imageProcessingService.FindRectangles(bitmap);
             ProcessedImage.Source = bitmap.ToBitmapImage();
         }
 
+        private void FindOvals_Click(object sender, RoutedEventArgs e)
+        {
+            if (_bitmap is null) return;
+
+            // var rand = new Random();
+            // _imageProcessingService.DrawRectangle(_bitmap,
+            //     new Rectangle(rand.Next(0, _bitmap.Width),
+            //             rand.Next(0, _bitmap.Height),
+            //             rand.Next(100, 400),
+            //             rand.Next(100, 500)),
+            //     Color.FromArgb(255, 0, 0),
+            //     true);
+            // OriginalImage.Source = _bitmap.ToBitmapImage();
+
+            var bitmap = _bitmap.Clone(new Rectangle(0, 0, _bitmap.Width, _bitmap.Height), _bitmap.PixelFormat);
+            _imageProcessingService.ShowBoundingCircles(bitmap);
+            ProcessedImage.Source = bitmap.ToBitmapImage();
+        }
+
+
+        private void FindTriangles_Click(object sender, RoutedEventArgs e)
+        {
+            if (_bitmap is null) return;
+
+            // var rand = new Random();
+            // _imageProcessingService.DrawRectangle(_bitmap,
+            //     new Rectangle(rand.Next(0, _bitmap.Width),
+            //             rand.Next(0, _bitmap.Height),
+            //             rand.Next(100, 400),
+            //             rand.Next(100, 500)),
+            //     Color.FromArgb(255, 0, 0),
+            //     true);
+            // OriginalImage.Source = _bitmap.ToBitmapImage();
+
+            var bitmap = _bitmap.Clone(new Rectangle(0, 0, _bitmap.Width, _bitmap.Height), _bitmap.PixelFormat);
+            //_imageProcessingService.ProcessPixels(bitmap);
+            ProcessedImage.Source = bitmap.ToBitmapImage();
+        }
         private void RemoveNoise_Click(object sender, RoutedEventArgs e)
         {
             if (_bitmap is null) return;
