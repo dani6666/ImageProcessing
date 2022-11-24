@@ -176,9 +176,10 @@ public class ImageProcessingService : IImageProcessingService
             .Distinct()
             .ToList();
 
-        while (points.Pairwise().Any(t => t.Item3 < 6))
+        var mergeDistance = 30;
+        while (points.Pairwise().Any(t => t.Item3 < mergeDistance))
         {
-            var pairsToMerge = points.Pairwise().Where(t => t.Item1 != t.Item2 && t.Item3 < 6).ToHashSet();
+            var pairsToMerge = points.Pairwise().Where(t => t.Item3 < mergeDistance).ToHashSet();
             var merged = pairsToMerge
                 .Select(t => new Point((t.Item1.Row + t.Item2.Row) / 2, (t.Item1.Column + t.Item2.Column) / 2))
                 .ToHashSet();
