@@ -157,7 +157,7 @@ public class ImageProcessingService : IImageProcessingService
             ? new Triangle(vertices[0], vertices[1], vertices[2])
             : null;
     }
-    
+
     /**
      *  Search for vertices based on list of points
      */
@@ -197,7 +197,7 @@ public class ImageProcessingService : IImageProcessingService
     private static IEnumerable<Point> FindMostDifferentPoints(List<Point> points)
     {
         var (p1, p2, _) = points.Pairwise().MaxBy(p => p.Item3);
-        return new [] { p1, p2 };
+        return new[] { p1, p2 };
     }
     //private Ellipse GetBoundingEllipse(List<Point> obj)
     //{
@@ -225,25 +225,43 @@ public class ImageProcessingService : IImageProcessingService
     //    return new Ellipse(rect, angle, center);
     //}
 
-    private Ellipse GetBoundingCircle(List<Point> obj, PixelHsv[,] pixels, Predicate<PixelHsv> condition)
+    private Ellipse? GetBoundingCircle(List<Point> obj, PixelHsv[,] pixels, Predicate<PixelHsv> condition)
     {
         var (center, radius) = FindBoundingCircle(obj, pixels, condition);
-        //var (p1, p2, diameter) = GetExtremePoints(obj, pixels, condition);
+        var (p1, p2, diameter) = GetExtremePoints(obj, pixels, condition);
         pixels[center.Row, center.Column].H = 150;
-        pixels[center.Row+1, center.Column].H = 150;
-        pixels[center.Row, center.Column+1].H = 150;
-        pixels[center.Row, center.Column-1].H = 150;
-        pixels[center.Row-1, center.Column].H = 150;
+        pixels[center.Row + 1, center.Column].H = 150;
+        pixels[center.Row, center.Column + 1].H = 150;
+        pixels[center.Row, center.Column - 1].H = 150;
+        pixels[center.Row - 1, center.Column].H = 150;
 
-        Size size = new Size(radius*2, radius*2);
+        var line = Line.FromPoints(p1.Row, p1.Column, p2.Row, p2.Column);
+
+        var smallerRadius = radius;
+        while (radius * smallerRadius * Math.PI * 0.95 > obj.Count)
+        {
+            smallerRadius--;
+        }
+
+        if (obj.Count * 0.05 < obj.Count(p => IsInElipse(p, center, radius, smallerRadius, p1.Row > p2.Row ? p1 : p2, p1.Row > p2.Row ? p2 : p1)))
+            return null;
+
+
+        Size size = new Size(radius * 2, radius * 2);
         System.Drawing.Point drawingCenter = new System.Drawing.Point(center.Column, center.Row);
-            //new System.Drawing.Point((p1.Column + p2.Column) / 2, (p1.Row + p2.Row) / 2);
+        //new System.Drawing.Point((p1.Column + p2.Column) / 2, (p1.Row + p2.Row) / 2);
 
         //int h2 = size.Height;
         //int w2 = size.Width;
 
         System.Drawing.Rectangle rect = new System.Drawing.Rectangle(new System.Drawing.Point(drawingCenter.X - radius, drawingCenter.Y - radius), size);
         return new Ellipse(rect, 0f, drawingCenter);
+    }
+
+    private bool IsInElipse(Point givenPoint, Point elipseCenter, int biggerRadius, int smallerRadius, Point extremePoint1, Point extremePoint2)
+    {
+        float angle = (float)(Math.Atan2(extremePoint1.Row - extremePoint2.Row, extremePoint1.Column - extremePoint2.Column) * 180f / Math.PI);
+        return true;//todo
     }
 
     private (Point center, int diameter) FindBoundingCircle(List<Point> obj, PixelHsv[,] pixels, Predicate<PixelHsv> condition)
@@ -367,7 +385,7 @@ public class ImageProcessingService : IImageProcessingService
             //     {
             //         hsv[r, c].H = 110;
             //     }
-            
+
             // Triangles
             var rect = GetInsideRectangle(obj);
             if (rect != null && rect.Area > obj.Count * 0.9f)
@@ -405,7 +423,7 @@ public class ImageProcessingService : IImageProcessingService
 
             // Triangles
             var triangle = FindTriangle(obj);
-            if(triangle == null)
+            if (triangle == null)
                 continue;
             DrawPoint(hsv, triangle.A);
             DrawPoint(hsv, triangle.B);
@@ -430,14 +448,14 @@ public class ImageProcessingService : IImageProcessingService
     {
         var black = new PixelHsv(150, 0, 0);
         pixels[point.Row, point.Column] = black;
-        pixels[point.Row+1, point.Column] = black;
-        pixels[point.Row+1, point.Column-1] = black;
-        pixels[point.Row+1, point.Column+1] = black;
-        pixels[point.Row-1, point.Column] = black;
-        pixels[point.Row, point.Column+1] = black;
-        pixels[point.Row, point.Column-1] = black;
-        pixels[point.Row-1, point.Column-1] = black;
-        pixels[point.Row+1, point.Column-1] = black;
+        pixels[point.Row + 1, point.Column] = black;
+        pixels[point.Row + 1, point.Column - 1] = black;
+        pixels[point.Row + 1, point.Column + 1] = black;
+        pixels[point.Row - 1, point.Column] = black;
+        pixels[point.Row, point.Column + 1] = black;
+        pixels[point.Row, point.Column - 1] = black;
+        pixels[point.Row - 1, point.Column - 1] = black;
+        pixels[point.Row + 1, point.Column - 1] = black;
     }
 
     public void ShowBoundingCircles(Bitmap bitmap)
@@ -454,7 +472,8 @@ public class ImageProcessingService : IImageProcessingService
             foreach (var obj in objects)
             {
                 var ellipse = GetBoundingCircle(obj, hsv, predicate);
-                ellipses.Add(ellipse);
+                if(ellipse != null)
+                    ellipses.Add(ellipse);
             }
             image.WritePixels(hsv
                 //.Cover(new PixelHsv(330, 0.3f, 0.3f), new PixelHsv(360, 1, 1), new PixelHsv(110, 0.95f, 0.95f))
