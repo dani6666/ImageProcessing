@@ -229,11 +229,7 @@ public class ImageProcessingService : IImageProcessingService
     {
         var (center, radius) = FindBoundingCircle(obj, pixels, condition);
         var (p1, p2, diameter) = GetExtremePoints(obj, pixels, condition);
-        pixels[center.Row, center.Column].H = 150;
-        pixels[center.Row + 1, center.Column].H = 150;
-        pixels[center.Row, center.Column + 1].H = 150;
-        pixels[center.Row, center.Column - 1].H = 150;
-        pixels[center.Row - 1, center.Column].H = 150;
+        DrawPoint(pixels, center, 150);
 
         var line = Line.FromPoints(p1.Row, p1.Column, p2.Row, p2.Column);
 
@@ -425,9 +421,9 @@ public class ImageProcessingService : IImageProcessingService
             var triangle = FindTriangle(obj);
             if (triangle == null)
                 continue;
-            DrawPoint(hsv, triangle.A);
-            DrawPoint(hsv, triangle.B);
-            DrawPoint(hsv, triangle.C);
+            DrawPoint(hsv, new Point(triangle.A.Row, triangle.A.Column));
+            DrawPoint(hsv, new Point(triangle.B.Row, triangle.B.Column));
+            DrawPoint(hsv, new Point(triangle.C.Row, triangle.C.Column ));
             //if (triangle != null)
             //{
             //    using var pen = new Pen(Color.Black, 20);
@@ -444,18 +440,16 @@ public class ImageProcessingService : IImageProcessingService
          );
     }
 
-    void DrawPoint(PixelHsv[,] pixels, Point point)
+    void DrawPoint(PixelHsv[,] pixels, Point point, int hue= 150)
     {
-        var black = new PixelHsv(150, 0, 0);
-        pixels[point.Row, point.Column] = black;
-        pixels[point.Row + 1, point.Column] = black;
-        pixels[point.Row + 1, point.Column - 1] = black;
-        pixels[point.Row + 1, point.Column + 1] = black;
-        pixels[point.Row - 1, point.Column] = black;
-        pixels[point.Row, point.Column + 1] = black;
-        pixels[point.Row, point.Column - 1] = black;
-        pixels[point.Row - 1, point.Column - 1] = black;
-        pixels[point.Row + 1, point.Column - 1] = black;
+        var black = new PixelHsv(hue, 0, 0);
+        for (int i = 0; i < 6; i++)
+        {
+            for (int j = 0; j < 6; j++)
+            {
+                pixels[point.Row +i, point.Column+j] = black;
+            }
+        }
     }
 
     public void ShowBoundingCircles(Bitmap bitmap)
