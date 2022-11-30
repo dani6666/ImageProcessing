@@ -57,7 +57,7 @@ public class ImageProcessingService : IImageProcessingService
             var p1 = boundingPoints[i];
 
 
-            for (int j = i + 20; j < boundingPoints.Count; j++)
+            for (int j = i; j < boundingPoints.Count; j++)
             {
                 var p2 = boundingPoints[j];
                 var dist = Point.CalculateDistance(p1, p2);
@@ -238,26 +238,27 @@ public class ImageProcessingService : IImageProcessingService
         {
             smallerRadius--;
         }
+        float angle = (float)(Math.Atan2(p1.Row - p2.Row, p1.Column - p2.Column) * 180f / Math.PI);
 
-        if (obj.Count * 0.05 < obj.Count(p => IsInElipse(p, center, radius, smallerRadius, p1.Row > p2.Row ? p1 : p2, p1.Row > p2.Row ? p2 : p1)))
+        if (obj.Count(p => IsInElipse(p, center, radius, smallerRadius, angle)) < obj.Count * 0.0001)
             return null;
 
-
-        Size size = new Size(radius * 2, radius * 2);
+        Size size = new Size(radius * 2, smallerRadius * 2);
         System.Drawing.Point drawingCenter = new System.Drawing.Point(center.Column, center.Row);
         //new System.Drawing.Point((p1.Column + p2.Column) / 2, (p1.Row + p2.Row) / 2);
 
         //int h2 = size.Height;
         //int w2 = size.Width;
 
-        System.Drawing.Rectangle rect = new System.Drawing.Rectangle(new System.Drawing.Point(drawingCenter.X - radius, drawingCenter.Y - radius), size);
-        return new Ellipse(rect, 0f, drawingCenter);
+        System.Drawing.Rectangle rect = new System.Drawing.Rectangle(new System.Drawing.Point(drawingCenter.X - size.Width/2, drawingCenter.Y - size.Height/2), size);
+        return new Ellipse(rect, angle, drawingCenter);
     }
 
-    private bool IsInElipse(Point givenPoint, Point elipseCenter, int biggerRadius, int smallerRadius, Point extremePoint1, Point extremePoint2)
+    private bool IsInElipse(Point givenPoint, Point elipseCenter, int biggerRadius, int smallerRadius, float angle)
     {
-        float angle = (float)(Math.Atan2(extremePoint1.Row - extremePoint2.Row, extremePoint1.Column - extremePoint2.Column) * 180f / Math.PI);
-        return true;//todo
+        var isInside = Math.Pow(Math.Cos(angle) * (givenPoint.Column - elipseCenter.Column) + Math.Sin(angle) * (givenPoint.Row - elipseCenter.Row), 2) / smallerRadius * smallerRadius 
+            - Math.Pow(Math.Sin(angle) * (givenPoint.Column - elipseCenter.Column) - Math.Cos(angle) * (givenPoint.Row - elipseCenter.Row),2) / biggerRadius * biggerRadius >=1;
+        return isInside;//todo
     }
 
     private (Point center, int diameter) FindBoundingCircle(List<Point> obj, PixelHsv[,] pixels, Predicate<PixelHsv> condition)
@@ -480,12 +481,12 @@ public class ImageProcessingService : IImageProcessingService
         {
             using var pen = new Pen(Color.Blue, 2);
             using var graphics = Graphics.FromImage(bitmap);
-            //graphics.TranslateTransform(e.Center.X, e.Center.Y);
-            //graphics.RotateTransform(e.Angle);
-            //graphics.TranslateTransform(-e.Center.X, -e.Center.Y);
+            graphics.TranslateTransform(e.Center.X, e.Center.Y);
+            graphics.RotateTransform(e.Angle);
+            graphics.TranslateTransform(-e.Center.X, -e.Center.Y);
             //graphics.DrawRectangle(pen, e.BoundingRect);
             graphics.DrawEllipse(pen, e.BoundingRect);
-            //graphics.ResetTransform();
+            graphics.ResetTransform();
         }
     }
 
