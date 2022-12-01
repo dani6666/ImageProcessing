@@ -225,7 +225,7 @@ public class ImageProcessingService : IImageProcessingService
     //    return new Ellipse(rect, angle, center);
     //}
 
-    private Ellipse? GetBoundingCircle(List<Point> obj, PixelHsv[,] pixels, Predicate<PixelHsv> condition)
+    private (Ellipse? elipse, bool isElipse) GetBoundingCircle(List<Point> obj, PixelHsv[,] pixels, Predicate<PixelHsv> condition)
     {
         var (center, radius) = FindBoundingCircle(obj, pixels, condition);
         var (p1, p2, diameter) = GetExtremePoints(obj, pixels, condition);
@@ -234,14 +234,21 @@ public class ImageProcessingService : IImageProcessingService
         var line = Line.FromPoints(p1.Row, p1.Column, p2.Row, p2.Column);
 
         var smallerRadius = radius;
-        while (radius * smallerRadius * Math.PI * 0.95 > obj.Count)
+        while (radius * smallerRadius * Math.PI * 0.90 > obj.Count)
         {
             smallerRadius--;
         }
-        float angle = (float)(Math.Atan2(p1.Row - p2.Row, p1.Column - p2.Column) * 180f / Math.PI);
 
-        if (obj.Count(p => IsInElipse(p, center, radius, smallerRadius, angle)) < obj.Count * 0.0001)
-            return null;
+        if(smallerRadius == 0) return (null, false);
+
+        float angle = (float)(Math.Abs(Math.Atan2(p1.Row - p2.Row, p1.Column - p2.Column) * 180f / Math.PI));
+        if (angle < 0.1f)
+            angle = 0;
+
+        var isElipse = true;
+        var count = obj.Count(p => IsInElipse(p, center, radius, smallerRadius, angle));
+        if (count < obj.Count * 0.90)
+            isElipse = false;
 
         Size size = new Size(radius * 2, smallerRadius * 2);
         System.Drawing.Point drawingCenter = new System.Drawing.Point(center.Column, center.Row);
@@ -251,13 +258,13 @@ public class ImageProcessingService : IImageProcessingService
         //int w2 = size.Width;
 
         System.Drawing.Rectangle rect = new System.Drawing.Rectangle(new System.Drawing.Point(drawingCenter.X - size.Width/2, drawingCenter.Y - size.Height/2), size);
-        return new Ellipse(rect, angle, drawingCenter);
+        return (new Ellipse(rect, angle, drawingCenter), isElipse);
     }
 
     private bool IsInElipse(Point givenPoint, Point elipseCenter, int biggerRadius, int smallerRadius, float angle)
     {
-        var isInside = Math.Pow(Math.Cos(angle) * (givenPoint.Column - elipseCenter.Column) + Math.Sin(angle) * (givenPoint.Row - elipseCenter.Row), 2) / smallerRadius * smallerRadius 
-            - Math.Pow(Math.Sin(angle) * (givenPoint.Column - elipseCenter.Column) - Math.Cos(angle) * (givenPoint.Row - elipseCenter.Row),2) / biggerRadius * biggerRadius >=1;
+        var isInside = Math.Pow(Math.Cos(angle) * (givenPoint.Column - elipseCenter.Column) + Math.Sin(angle) * (givenPoint.Row - elipseCenter.Row), 2) / (smallerRadius * smallerRadius) 
+            + Math.Pow(Math.Sin(angle) * (givenPoint.Column - elipseCenter.Column) - Math.Cos(angle) * (givenPoint.Row - elipseCenter.Row),2) / (biggerRadius * biggerRadius) < 1;
         return isInside;//todo
     }
 
@@ -425,6 +432,10 @@ public class ImageProcessingService : IImageProcessingService
             DrawPoint(hsv, new Point(triangle.A.Row, triangle.A.Column));
             DrawPoint(hsv, new Point(triangle.B.Row, triangle.B.Column));
             DrawPoint(hsv, new Point(triangle.C.Row, triangle.C.Column ));
+            foreach (var (r, c) in obj)
+            {
+                hsv[r, c].H = 110;
+            }
             //if (triangle != null)
             //{
             //    using var pen = new Pen(Color.Black, 20);
@@ -466,9 +477,17 @@ public class ImageProcessingService : IImageProcessingService
 
             foreach (var obj in objects)
             {
-                var ellipse = GetBoundingCircle(obj, hsv, predicate);
+                var (ellipse, isElipse) = GetBoundingCircle(obj, hsv, predicate);
                 if(ellipse != null)
                     ellipses.Add(ellipse);
+
+                if (isElipse)
+                {
+                    foreach (var (r, c) in obj)
+                    {
+                        hsv[r, c].H = 110;
+                    }
+                }
             }
             image.WritePixels(hsv
                 //.Cover(new PixelHsv(330, 0.3f, 0.3f), new PixelHsv(360, 1, 1), new PixelHsv(110, 0.95f, 0.95f))
