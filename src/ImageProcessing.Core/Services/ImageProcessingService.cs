@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using Point = ImageProcessing.Core.Model.Point;
 using Rectangle = ImageProcessing.Core.Model.Rectangle;
 
@@ -225,7 +226,7 @@ public class ImageProcessingService : IImageProcessingService
     //    return new Ellipse(rect, angle, center);
     //}
 
-    private (Ellipse? elipse, bool isElipse) GetBoundingCircle(List<Point> obj, PixelHsv[,] pixels, Predicate<PixelHsv> condition)
+    private bool GetBoundingCircle(List<Point> obj, PixelHsv[,] pixels, Predicate<PixelHsv> condition)
     {
         var (center, radius) = FindBoundingCircle(obj, pixels, condition);
         var (p1, p2, diameter) = GetExtremePoints(obj, pixels, condition);
@@ -239,17 +240,29 @@ public class ImageProcessingService : IImageProcessingService
             smallerRadius--;
         }
 
-        if(smallerRadius == 0) return (null, false);
+        if(smallerRadius == 0) return  false;
 
-        float angle = (float)(Math.Abs(Math.Atan2(p1.Row - p2.Row, p1.Column - p2.Column) * 180f / Math.PI));
-        if (angle < 0.1f)
-            angle = 0;
+        if (p2.Row > p1.Row)
+            (p1, p2) = (p2, p1);
+
+        float angle = (float)(/*Math.Abs(*/Math.Atan2(p1.Row - p2.Row, p1.Column - p2.Column))/*)*/;
+
+        if (angle > Math.PI / 2)
+            angle -= (float)Math.PI / 2;
+        else
+            angle += (float)Math.PI / 2;
 
         var isElipse = true;
         var count = obj.Count(p => IsInElipse(p, center, radius, smallerRadius, angle));
         if (count < obj.Count * 0.90)
-            isElipse = false;
+            return false;
 
+        var found = obj.Where(p => IsInElipse(p, center, radius, smallerRadius, angle));
+
+        foreach (var (r, c) in found)
+        {
+            pixels[r, c].H = 110;
+        }
         Size size = new Size(radius * 2, smallerRadius * 2);
         System.Drawing.Point drawingCenter = new System.Drawing.Point(center.Column, center.Row);
         //new System.Drawing.Point((p1.Column + p2.Column) / 2, (p1.Row + p2.Row) / 2);
@@ -258,14 +271,18 @@ public class ImageProcessingService : IImageProcessingService
         //int w2 = size.Width;
 
         System.Drawing.Rectangle rect = new System.Drawing.Rectangle(new System.Drawing.Point(drawingCenter.X - size.Width/2, drawingCenter.Y - size.Height/2), size);
-        return (new Ellipse(rect, angle, drawingCenter), isElipse);
+        return true;
     }
 
     private bool IsInElipse(Point givenPoint, Point elipseCenter, int biggerRadius, int smallerRadius, float angle)
     {
-        var isInside = Math.Pow(Math.Cos(angle) * (givenPoint.Column - elipseCenter.Column) + Math.Sin(angle) * (givenPoint.Row - elipseCenter.Row), 2) / (smallerRadius * smallerRadius) 
-            + Math.Pow(Math.Sin(angle) * (givenPoint.Column - elipseCenter.Column) - Math.Cos(angle) * (givenPoint.Row - elipseCenter.Row),2) / (biggerRadius * biggerRadius) < 1;
-        return isInside;//todo
+        //angle +=90;
+        if (Math.Abs(angle) < 0.2f)
+            return Math.Pow(givenPoint.Row - elipseCenter.Row, 2) / (biggerRadius * biggerRadius) +
+                Math.Pow(givenPoint.Column - elipseCenter.Column, 2) / (smallerRadius * smallerRadius) <= 1;
+
+        return Math.Pow(Math.Cos(angle) * (givenPoint.Column - elipseCenter.Column) + Math.Sin(angle) * (givenPoint.Row - elipseCenter.Row), 2) / (smallerRadius * smallerRadius)
+            + Math.Pow(Math.Sin(angle) * (givenPoint.Column - elipseCenter.Column) - Math.Cos(angle) * (givenPoint.Row - elipseCenter.Row), 2) / (biggerRadius * biggerRadius) <= 1;
     }
 
     private (Point center, int diameter) FindBoundingCircle(List<Point> obj, PixelHsv[,] pixels, Predicate<PixelHsv> condition)
@@ -459,7 +476,7 @@ public class ImageProcessingService : IImageProcessingService
         {
             for (int j = 0; j < 6; j++)
             {
-                pixels[point.Row +i, point.Column+j] = black;
+                pixels[point.Row + i, point.Column + j] = black;
             }
         }
     }
@@ -477,9 +494,9 @@ public class ImageProcessingService : IImageProcessingService
 
             foreach (var obj in objects)
             {
-                var (ellipse, isElipse) = GetBoundingCircle(obj, hsv, predicate);
-                if(ellipse != null)
-                    ellipses.Add(ellipse);
+                   var isElipse = GetBoundingCircle(obj, hsv, predicate);
+                //if(ellipse != null)
+                    //ellipses.Add(ellipse);
 
                 if (isElipse)
                 {
