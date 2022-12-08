@@ -388,6 +388,23 @@ public class ImageProcessingService : IImageProcessingService
     //    // where x - horizontal dimension (col), y - vertical dimension (x)
     //    return new Rectangle(c, r, endC - c, endR - r);
     //}
+    public Dictionary<(PixelHsv, PixelHsv), int> GetColorStats(Bitmap bitmap, int numOfBuckets)
+    {
+        using var image = new BitmapLockAdapter(bitmap);
+        var hsv = image.ReadPixels().AsHsv();
+        List<(PixelHsv, PixelHsv)> buckets = new List<(PixelHsv, PixelHsv)>(numOfBuckets);
+        var bucketRange = 360 / numOfBuckets;
+        for (int i = 0; i < numOfBuckets; i++)
+        {
+            var lowerBound = i * bucketRange;
+            var upperBound = i == numOfBuckets - 1
+                ? (i + 1) * bucketRange
+                : (i + 1) * bucketRange - 1;
+
+            buckets.Add((new PixelHsv(lowerBound, 0, 0), new PixelHsv(upperBound, 1, 1)));
+        }
+        return ImageHelpers.CreateHistogram(hsv, buckets);
+    }
 
     public void FindRectangles(Bitmap bitmap)
     {
@@ -526,7 +543,7 @@ public class ImageProcessingService : IImageProcessingService
         }
     }
 
-    //public void DrawRectangle(Bitmap bitmap, Rectangle rectangle, Color color, bool fill)
+    //public void DrawRectangle(Bitmap bitmap, System.Drawing.Rectangle rectangle, Color color, bool fill)
     //{
     //    using var graphics = Graphics.FromImage(bitmap);
     //    if (fill)
