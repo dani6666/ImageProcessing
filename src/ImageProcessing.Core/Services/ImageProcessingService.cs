@@ -44,7 +44,7 @@ public class ImageProcessingService : IImageProcessingService
         for (int i = 0; i < obj.Count; i++)
         {
             var p = obj[i];
-            if (p.Row != 0 && p.Row != pixels.GetLength(0) && p.Column != 0 && p.Column != pixels.GetLength(1) &&
+            if (p.Row != 0 && p.Row != pixels.GetLength(0) - 1 && p.Column != 0 && p.Column != pixels.GetLength(1) -1 &&
                 condition(pixels[p.Row, p.Column - 1]) &&
                 condition(pixels[p.Row, p.Column + 1]) &&
                 condition(pixels[p.Row - 1, p.Column]) &&
@@ -296,7 +296,7 @@ public class ImageProcessingService : IImageProcessingService
 
         foreach (var p in obj)
         {
-            if (p.Row != 0 && p.Row != pixels.GetLength(0) && p.Column != 0 && p.Column != pixels.GetLength(1) &&
+            if (p.Row != 0 && p.Row != pixels.GetLength(0) - 1 && p.Column != 0 && p.Column != pixels.GetLength(1) -1 &&
                 condition(pixels[p.Row, p.Column - 1]) &&
                 condition(pixels[p.Row, p.Column + 1]) &&
                 condition(pixels[p.Row - 1, p.Column]) &&
@@ -412,7 +412,7 @@ public class ImageProcessingService : IImageProcessingService
 
         var hsv = image.ReadPixels().AsHsv();
         Predicate<PixelHsv> predicate = p => p.IsWithinBounds(new PixelHsv(330, 0.3f, 0.3f), new PixelHsv(360, 1, 1)) ||
-                                             p.IsWithinBounds(new PixelHsv(0, 0.3f, 0.3f), new PixelHsv(30, 1, 1));
+                                            p.IsWithinBounds(new PixelHsv(0, 0.3f, 0.3f), new PixelHsv(30, 1, 1));
         var objects = DetectObjects(hsv, predicate);
 
         foreach (var obj in objects)
@@ -493,7 +493,7 @@ public class ImageProcessingService : IImageProcessingService
         {
             for (int j = 0; j < 6; j++)
             {
-                pixels[point.Row + i, point.Column + j] = black;
+                pixels[Math.Min(point.Row + i, pixels.GetLength(0)-1), Math.Min(point.Column + j, pixels.GetLength(1)-1)] = black;
             }
         }
     }
@@ -513,14 +513,14 @@ public class ImageProcessingService : IImageProcessingService
             {
                    var isElipse = GetBoundingCircle(obj, hsv, predicate);
                 //if(ellipse != null)
-                    //ellipses.Add(ellipse);
+                //ellipses.Add(ellipse);
 
                 if (isElipse)
-                {
                     foreach (var (r, c) in obj)
                     {
                         hsv[r, c].H = 110;
-                    }
+                        hsv[r, c].S = 1;
+                        hsv[r, c].V = 1;
                 }
             }
             image.WritePixels(hsv
@@ -569,5 +569,23 @@ public class ImageProcessingService : IImageProcessingService
             )
         );
 
+    }
+
+    public void ShowHue(Bitmap bitmap)
+    {
+        using var image = new BitmapLockAdapter(bitmap);
+
+        var hsv = image.ReadPixels().AsHsv();
+        for(int i =0; i < hsv.GetLength(0); i++)
+        {
+            for(int j=0; j< hsv.GetLength(1); j++)
+            {
+                hsv[i, j].S = 1;
+                hsv[i, j].V = 1;
+            }
+        }
+        image.WritePixels(hsv
+            .AsRgb()
+         );
     }
 }

@@ -121,6 +121,16 @@ namespace ImageProcessing.Windows
             ProcessedImage.Source = emptyBitmap.ToBitmapImage();
         }
 
+        private void ShowHue_Click(object sender, RoutedEventArgs e)
+        {
+            if (_bitmap is null) return;
+            var bitmap = _bitmap.Clone(new Rectangle(0, 0, _bitmap.Width, _bitmap.Height), _bitmap.PixelFormat);
+            _imageProcessingService.ShowHue(bitmap);
+            ProcessedImage.Source = bitmap.ToBitmapImage();
+
+        }
+
+
         private void RemoveNoise_Click(object sender, RoutedEventArgs e)
         {
             if (_bitmap is null) return;
