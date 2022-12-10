@@ -81,6 +81,8 @@ public class ImageProcessingService : IImageProcessingService
         var coordinatesToCheck = new Queue<Point>();
         coordinatesToCheck.Enqueue(new Point(startingRow, startingColumn));
 
+        var mergingRange = 2; 
+
         do
         {
             var (row, column) = coordinatesToCheck.Dequeue();
@@ -91,17 +93,31 @@ public class ImageProcessingService : IImageProcessingService
 
             result.Insert(~index, new Point(row, column));
 
-            if (row + 1 < rowsCount - 1)
-                coordinatesToCheck.Enqueue(new Point(row + 1, column));
+            for (int i = -mergingRange; i <= mergingRange; i++)
+            {
+                for (int j = -mergingRange; j <= mergingRange; j++)
+                {
+                    if(i == 0 && j == 0) continue;
 
-            if (row - 1 >= 0)
-                coordinatesToCheck.Enqueue(new Point(row - 1, column));
+                    var checkedRow = row + i;
+                    var checkedColumn = column + j;
+                    if (checkedRow < rowsCount - 1 && checkedRow >= 0 &&
+                        checkedColumn < columnsCount - 1 && checkedColumn >= 0)
+                        coordinatesToCheck.Enqueue(new Point(checkedRow, checkedColumn));
+                }
+            }
 
-            if (column + 1 < columnsCount - 1)
-                coordinatesToCheck.Enqueue(new Point(row, column + 1));
+            //if (row + 1 < rowsCount - 1)
+            //    coordinatesToCheck.Enqueue(new Point(row + 1, column));
 
-            if (column - 1 >= 0)
-                coordinatesToCheck.Enqueue(new Point(row, column - 1));
+            //if (row - 1 >= 0)
+            //    coordinatesToCheck.Enqueue(new Point(row - 1, column));
+
+            //if (column + 1 < columnsCount - 1)
+            //    coordinatesToCheck.Enqueue(new Point(row, column + 1));
+
+            //if (column - 1 >= 0)
+            //    coordinatesToCheck.Enqueue(new Point(row, column - 1));
 
         } while (coordinatesToCheck.Any());
 
@@ -240,7 +256,7 @@ public class ImageProcessingService : IImageProcessingService
             smallerRadius--;
         }
 
-        if(smallerRadius == 0) return  false;
+        if (smallerRadius == 0) return false;
 
         if (p2.Row > p1.Row)
             (p1, p2) = (p2, p1);
@@ -270,7 +286,7 @@ public class ImageProcessingService : IImageProcessingService
         //int h2 = size.Height;
         //int w2 = size.Width;
 
-        System.Drawing.Rectangle rect = new System.Drawing.Rectangle(new System.Drawing.Point(drawingCenter.X - size.Width/2, drawingCenter.Y - size.Height/2), size);
+        System.Drawing.Rectangle rect = new System.Drawing.Rectangle(new System.Drawing.Point(drawingCenter.X - size.Width / 2, drawingCenter.Y - size.Height / 2), size);
         return true;
     }
 
@@ -465,7 +481,7 @@ public class ImageProcessingService : IImageProcessingService
                 continue;
             DrawPoint(hsv, new Point(triangle.A.Row, triangle.A.Column));
             DrawPoint(hsv, new Point(triangle.B.Row, triangle.B.Column));
-            DrawPoint(hsv, new Point(triangle.C.Row, triangle.C.Column ));
+            DrawPoint(hsv, new Point(triangle.C.Row, triangle.C.Column));
             foreach (var (r, c) in obj)
             {
                 hsv[r, c].H = 110;
@@ -486,7 +502,7 @@ public class ImageProcessingService : IImageProcessingService
          );
     }
 
-    void DrawPoint(PixelHsv[,] pixels, Point point, int hue= 150)
+    void DrawPoint(PixelHsv[,] pixels, Point point, int hue = 150)
     {
         var black = new PixelHsv(hue, 0, 0);
         for (int i = 0; i < 6; i++)
@@ -511,7 +527,7 @@ public class ImageProcessingService : IImageProcessingService
 
             foreach (var obj in objects)
             {
-                   var isElipse = GetBoundingCircle(obj, hsv, predicate);
+                var isElipse = GetBoundingCircle(obj, hsv, predicate);
                 //if(ellipse != null)
                 //ellipses.Add(ellipse);
 
