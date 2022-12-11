@@ -36,12 +36,13 @@ namespace ImageProcessing.Core.Services
         /** 
          * increases small elements to kernel size
         */
-        public static PixelRgb[,] Dilation(PixelRgb[,] pixels, int kernelSize=4)
+        // pixel.IsMarked
+        public static PixelHsv[,] Dilation(PixelHsv[,] pixels, int kernelSize=4)
         {
             int h = pixels.GetLength(0);
             int w = pixels.GetLength(1);
 
-            PixelRgb[,] result = new PixelRgb[h, w];
+            PixelHsv[,] result = new PixelHsv[h, w];
 
             int padding = (kernelSize - 1) / 2;
             for (int r = padding; r < h - padding; r++)
@@ -68,12 +69,12 @@ namespace ImageProcessing.Core.Services
          * removes elements smaller than kernel
         */
 
-        public static PixelRgb[,] Erosion(PixelRgb[,] pixels, int kernelSize=4)
+        public static PixelHsv[,] Erosion(PixelHsv[,] pixels, int kernelSize=4)
         {
             int h = pixels.GetLength(0);
             int w = pixels.GetLength(1);
 
-            PixelRgb[,] result = new PixelRgb[h, w];
+            PixelHsv[,] result = new PixelHsv[h, w];
             int padding = (kernelSize - 1) / 2;
             for (int r = 0; r < h; r++)
             {
@@ -113,14 +114,14 @@ namespace ImageProcessing.Core.Services
          * smoothing contours, breaks elements smaller than kernel
         */
 
-        public static PixelRgb[,] MorphologicalOpening(PixelRgb[,] pixels, int kernelSize = 4)
+        public static PixelHsv[,] MorphologicalOpening(PixelHsv[,] pixels, int kernelSize = 4)
         {
             return Dilation(Erosion(pixels, kernelSize), kernelSize);
         }
         /** 
          * fuses openings smaller than kernel
         */
-        public static PixelRgb[,] MorphologicalClosing(PixelRgb[,] pixels, int kernelSize = 4)
+        public static PixelHsv[,] MorphologicalClosing(PixelHsv[,] pixels, int kernelSize = 4)
         {
             return Erosion(Dilation(pixels, kernelSize), kernelSize);
         }

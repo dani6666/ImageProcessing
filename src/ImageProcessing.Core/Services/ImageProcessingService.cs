@@ -577,7 +577,10 @@ public class ImageProcessingService : IImageProcessingService
                                              p.IsWithinBounds(new PixelHsv(180, 0, 0), new PixelHsv(360, 0.5f, 1));
 
         MarkPixels(hsv, predicate);
- 
+
+        hsv = ImageHelpers.MorphologicalClosing(
+            ImageHelpers.MorphologicalOpening(hsv));
+
         var objects = DetectObjects(hsv);
 
         var coverColor = 10;
@@ -638,11 +641,11 @@ public class ImageProcessingService : IImageProcessingService
         using var image = new BitmapLockAdapter(bitmap);
         var matrix = image.ReadPixels();
 
-        image.WritePixels(
-            ImageHelpers.MorphologicalClosing(
-                ImageHelpers.MorphologicalOpening(matrix)
-            )
-        );
+        //image.WritePixels(
+        //    ImageHelpers.MorphologicalClosing(
+        //        ImageHelpers.MorphologicalOpening(matrix)
+        //    )
+        //);
 
     }
 
