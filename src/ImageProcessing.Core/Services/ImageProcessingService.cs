@@ -13,7 +13,7 @@ namespace ImageProcessing.Core.Services;
 public class ImageProcessingService : IImageProcessingService
 {
 
-    private static List<List<Point>> DetectObjects(PixelHsv[,] pixels, Predicate<PixelHsv> condition)
+    private static List<List<Point>> DetectObjects(PixelHsv[,] pixels)
     {
         var result = new List<List<Point>>();
         var rowsCount = pixels.GetLength(0);
@@ -22,9 +22,9 @@ public class ImageProcessingService : IImageProcessingService
         {
             for (int c = 0; c < colsCount; c++)
             {
-                if (condition(pixels[r, c]) && !result.Any(o => o.BinarySearch(new Point(r, c)) >= 0))
+                if (pixels[r, c].IsMarked && !result.Any(o => o.BinarySearch(new Point(r, c)) >= 0))
                 {
-                    result.Add(DetectObject(pixels, condition, r, c));
+                    result.Add(DetectObject(pixels, r, c));
                 }
             }
         }
@@ -32,8 +32,8 @@ public class ImageProcessingService : IImageProcessingService
         return result;
     }
 
-    private static List<Point> DetectObject(PixelHsv[,] pixels, Predicate<PixelHsv> condition, int row, int column) =>
-        DetectObject(pixels, condition, row, column, new List<Point>());
+    private static List<Point> DetectObject(PixelHsv[,] pixels, int row, int column) =>
+        DetectObject(pixels, row, column, new List<Point>());
 
     private (Point extremeP1, Point extremeP2, int distance) GetExtremePoints(List<Point> obj, PixelHsv[,] pixels, Predicate<PixelHsv> condition)
     {
@@ -73,7 +73,7 @@ public class ImageProcessingService : IImageProcessingService
 
         return (extremeP1, extremeP2, longestDistance);
     }
-    private static List<Point> DetectObject(PixelHsv[,] pixels, Predicate<PixelHsv> condition, int startingRow, int startingColumn, List<Point> result)
+    private static List<Point> DetectObject(PixelHsv[,] pixels, int startingRow, int startingColumn, List<Point> result)
     {
         var rowsCount = pixels.GetLength(0);
         var columnsCount = pixels.GetLength(1);
@@ -88,7 +88,7 @@ public class ImageProcessingService : IImageProcessingService
             var (row, column) = coordinatesToCheck.Dequeue();
             var index = result.BinarySearch(new Point(row, column));
 
-            if (index >= 0 || !condition(pixels[row, column]))
+            if (index >= 0 || !pixels[row, column].IsMarked)
                 continue;
 
             result.Insert(~index, new Point(row, column));
@@ -101,9 +101,11 @@ public class ImageProcessingService : IImageProcessingService
 
                     var checkedRow = row + i;
                     var checkedColumn = column + j;
+
+                    var point = new Point(checkedRow, checkedColumn);
                     if (checkedRow < rowsCount - 1 && checkedRow >= 0 &&
                         checkedColumn < columnsCount - 1 && checkedColumn >= 0)
-                        coordinatesToCheck.Enqueue(new Point(checkedRow, checkedColumn));
+                        coordinatesToCheck.Enqueue(point);
                 }
             }
 
@@ -429,7 +431,9 @@ public class ImageProcessingService : IImageProcessingService
         var hsv = image.ReadPixels().AsHsv();
         Predicate<PixelHsv> predicate = p => p.IsWithinBounds(new PixelHsv(330, 0.3f, 0.3f), new PixelHsv(360, 1, 1)) ||
                                             p.IsWithinBounds(new PixelHsv(0, 0.3f, 0.3f), new PixelHsv(30, 1, 1));
-        var objects = DetectObjects(hsv, predicate);
+        MarkPixels(hsv, predicate);
+
+        var objects = DetectObjects(hsv);
 
         foreach (var obj in objects)
         {
@@ -464,7 +468,9 @@ public class ImageProcessingService : IImageProcessingService
         var hsv = image.ReadPixels().AsHsv();
         Predicate<PixelHsv> predicate = p => p.IsWithinBounds(new PixelHsv(330, 0.3f, 0.3f), new PixelHsv(360, 1, 1)) ||
                                              p.IsWithinBounds(new PixelHsv(0, 0.3f, 0.3f), new PixelHsv(30, 1, 1));
-        var objects = DetectObjects(hsv, predicate);
+        MarkPixels(hsv, predicate);
+
+        var objects = DetectObjects(hsv);
 
         foreach (var obj in objects)
         {
@@ -523,7 +529,9 @@ public class ImageProcessingService : IImageProcessingService
             var hsv = image.ReadPixels().AsHsv();
             Predicate<PixelHsv> predicate = p => p.IsWithinBounds(new PixelHsv(330, 0.3f, 0.3f), new PixelHsv(360, 1, 1)) ||
                      p.IsWithinBounds(new PixelHsv(0, 0.3f, 0.3f), new PixelHsv(30, 1, 1));
-            var objects = DetectObjects(hsv, predicate);
+            MarkPixels(hsv, predicate);
+
+            var objects = DetectObjects(hsv);
 
             foreach (var obj in objects)
             {
@@ -546,6 +554,7 @@ public class ImageProcessingService : IImageProcessingService
             );
         }
 
+
         foreach (var e in ellipses)
         {
             using var pen = new Pen(Color.Blue, 2);
@@ -556,6 +565,56 @@ public class ImageProcessingService : IImageProcessingService
             //graphics.DrawRectangle(pen, e.BoundingRect);
             graphics.DrawEllipse(pen, e.BoundingRect);
             graphics.ResetTransform();
+        }
+    }
+
+    public void FindRocks(Bitmap bitmap)
+    {
+        using var image = new BitmapLockAdapter(bitmap);
+
+        var hsv = image.ReadPixels().AsHsv();
+        Predicate<PixelHsv> predicate = p => p.IsWithinBounds(new PixelHsv(0, 0f, 0), new PixelHsv(60, 0.5f, 1)) ||
+                                             p.IsWithinBounds(new PixelHsv(180, 0, 0), new PixelHsv(360, 0.5f, 1));
+
+        MarkPixels(hsv, predicate);
+ 
+        var objects = DetectObjects(hsv);
+
+        var coverColor = 10;
+        foreach (var obj in objects)
+        {
+            //var isElipse = GetBoundingCircle(obj, hsv, predicate);
+            //if(ellipse != null)
+            //ellipses.Add(ellipse);
+
+            //if (isElipse)
+            foreach (var (r, c) in obj)
+            {
+                hsv[r, c].H = coverColor;
+                hsv[r, c].S = 1;
+                hsv[r, c].V = 1;
+            }
+
+            coverColor = (coverColor + 30) % 350;
+        }
+        image.WritePixels(hsv
+            //.Cover(new PixelHsv(330, 0.3f, 0.3f), new PixelHsv(360, 1, 1), new PixelHsv(110, 0.95f, 0.95f))
+            //.Cover(new PixelHsv(0, 0.3f, 0.3f), new PixelHsv(30, 1, 1), new PixelHsv(110, 0.95f, 0.95f))
+            .AsRgb()
+        );
+    }
+
+    public void MarkPixels(PixelHsv[,] pixels, Predicate<PixelHsv> condition)
+    {
+        var rowsCount = pixels.GetLength(0);
+        var colsCount = pixels.GetLength(1);
+        for (var r = 0; r < rowsCount; r++)
+        {
+            for (var c = 0; c < colsCount; c++)
+            {
+                if (condition(pixels[r, c]))
+                    pixels[r, c].IsMarked = true;
+            }
         }
     }
 

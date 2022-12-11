@@ -92,6 +92,26 @@ namespace ImageProcessing.Windows
             _imageProcessingService.FindTriangles(bitmap);
             ProcessedImage.Source = bitmap.ToBitmapImage();
         }
+
+        private void FindRocks_Click(object sender, RoutedEventArgs e)
+        {
+            if (_bitmap is null) return;
+
+            // var rand = new Random();
+            // _imageProcessingService.DrawRectangle(_bitmap,
+            //     new Rectangle(rand.Next(0, _bitmap.Width),
+            //             rand.Next(0, _bitmap.Height),
+            //             rand.Next(100, 400),
+            //             rand.Next(100, 500)),
+            //     Color.FromArgb(255, 0, 0),
+            //     true);
+            // OriginalImage.Source = _bitmap.ToBitmapImage();
+
+            var bitmap = _bitmap.Clone(new Rectangle(0, 0, _bitmap.Width, _bitmap.Height), _bitmap.PixelFormat);
+            _imageProcessingService.FindRocks(bitmap);
+            ProcessedImage.Source = bitmap.ToBitmapImage();
+        }
+
         private void ShowStats_Click(object sender, RoutedEventArgs e)
         {
             if (_bitmap is null) return;

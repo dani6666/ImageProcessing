@@ -9,6 +9,8 @@ public class PixelHsv : IPixel
     /** Value: 0 - 1 */
     public float V { get; set; }
 
+    public bool IsMarked { get; set; }
+
     public PixelHsv(float hue, float saturation, float value)
     {
         H = hue;
@@ -18,8 +20,8 @@ public class PixelHsv : IPixel
 
     public bool IsWithinBounds(PixelHsv lower, PixelHsv upper)
     {
-        return lower.H <= H && H <= upper.H &&
-               lower.S <= S && S <= upper.S &&
+        return lower.S <= S && S <= upper.S &&
+               lower.H <= H && H <= upper.H &&
                lower.V <= V && V <= upper.V;
     }
     

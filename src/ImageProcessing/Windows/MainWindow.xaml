@@ -22,6 +22,7 @@
                 <MenuItem Header="Find rectangles" Click="FindRectangles_Click"/>
                 <MenuItem Header="Find ovals" Click="FindOvals_Click"/>
                 <MenuItem Header="Find triangles" Click="FindTriangles_Click"/>
+                <MenuItem Header="Find rocks" Click="FindRocks_Click"/>
                 <MenuItem Header="Remove noise" Click="RemoveNoise_Click"/>
                 <MenuItem Header="Show stats" Click="ShowStats_Click"/>
                 <MenuItem Header="Show hue" Click="ShowHue_Click"/>
