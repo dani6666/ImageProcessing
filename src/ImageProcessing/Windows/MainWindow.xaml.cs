@@ -124,6 +124,8 @@ namespace ImageProcessing.Windows
             var i = 0;
             foreach(var entry in histogram)
             {
+                entry.Key.Item1.S = 1;
+                entry.Key.Item1.V = 1;
                 var lower = entry.Key.Item1.AsRgb();
                 var upper = entry.Key.Item2.AsRgb();
                 var brush = new LinearGradientBrush(

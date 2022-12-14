@@ -1,4 +1,8 @@
 ﻿using ImageProcessing.Core.Model;
+using System.Drawing.Imaging;
+using System.Drawing;
+using System.Runtime.InteropServices;
+using System.Runtime.Serialization.Formatters;
 
 namespace ImageProcessing.Core.Services
 {
@@ -53,11 +57,15 @@ namespace ImageProcessing.Core.Services
                     {
                         for (int kernelC = -padding; kernelC <= padding; kernelC++)
                         {
-                            var R = Math.Max((result[r + kernelR, c + kernelC]?.R ?? 0), pixels[r,c].R);
-                            //var G = Math.Max((result[r + kernelR, c + kernelC]?.Green ?? 0), pixels[r, c].Green);
-                            //var B = Math.Max((result[r + kernelR, c + kernelC]?.Blue ?? 0), pixels[r, c].Blue);
+                            var marked =  pixels[r,c].IsMarked;
 
-                            result[r + kernelR, c + kernelC] = new PixelRgb(R, R, R);
+                            result[r + kernelR, c + kernelC] = new PixelHsv(pixels[r + kernelR, c + kernelC].H, pixels[r + kernelR, c + kernelC].S, pixels[r + kernelR, c + kernelC].V);
+                            if (marked)
+                                result[r + kernelR, c + kernelC].IsMarked = marked;
+                            
+                            else
+                                result[r + kernelR, c + kernelC].IsMarked = pixels[r + kernelR, c + kernelC].IsMarked;
+
                         }
                     }
                 }
@@ -80,7 +88,7 @@ namespace ImageProcessing.Core.Services
             {
                 for (int c = 0; c < w; c++)
                 {
-                    result[r, c] = new PixelRgb(0, 0, 0);
+                    result[r, c] = new PixelHsv(0, 0, 0);
                 }
             }
 
@@ -88,22 +96,19 @@ namespace ImageProcessing.Core.Services
             {
                 for (int c = padding; c < w - padding; c++)
                 {
-                    byte R = 255;
-                    //byte G = 255;
-                    //byte B = 255;
+                    var marked = true;
                     for (int kernelR = -padding; kernelR <= padding; kernelR++)
                     {
                         for (int kernelC = -padding; kernelC <= padding; kernelC++)
                         {
-                            R = Math.Min(R, pixels[r + kernelR, c + kernelC].R) ;
-                            //G = Math.Min(G, pixels[r + kernelR, c + kernelC].Green);
-                            //B = Math.Min(B, pixels[r + kernelR, c + kernelC].Blue);
+                            marked = marked && pixels[r + kernelR, c + kernelC].IsMarked;
+                            if (!marked) break;
 
                         }
+                        if (!marked) break;
                     }
-                    result[r, c].R = R;
-                    result[r, c].G = R;
-                    result[r, c].B = R;
+                    result[r, c] = new PixelHsv(pixels[r, c].H, pixels[r, c].S, pixels[r, c].V);
+                    result[r, c].IsMarked = marked;
 
                 }
             }

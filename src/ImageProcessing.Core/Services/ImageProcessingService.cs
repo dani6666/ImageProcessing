@@ -81,7 +81,7 @@ public class ImageProcessingService : IImageProcessingService
         var coordinatesToCheck = new Queue<Point>();
         coordinatesToCheck.Enqueue(new Point(startingRow, startingColumn));
 
-        var mergingRange = 2; 
+        var mergingRange = Math.Max(2, pixels.GetLength(0)/100);
 
         do
         {
@@ -92,6 +92,10 @@ public class ImageProcessingService : IImageProcessingService
                 continue;
 
             result.Insert(~index, new Point(row, column));
+            if (!pixels[row, column].IsMarked)
+            {
+                continue;
+            }
 
             for (int i = -mergingRange; i <= mergingRange; i++)
             {
@@ -574,12 +578,12 @@ public class ImageProcessingService : IImageProcessingService
 
         var hsv = image.ReadPixels().AsHsv();
         Predicate<PixelHsv> predicate = p => p.IsWithinBounds(new PixelHsv(0, 0f, 0), new PixelHsv(60, 0.5f, 1)) ||
-                                             p.IsWithinBounds(new PixelHsv(180, 0, 0), new PixelHsv(360, 0.5f, 1));
+                                             p.IsWithinBounds(new PixelHsv(200, 0f, 0), new PixelHsv(360, 0.5f, 1));
 
         MarkPixels(hsv, predicate);
 
         hsv = ImageHelpers.MorphologicalClosing(
-            ImageHelpers.MorphologicalOpening(hsv));
+            ImageHelpers.MorphologicalOpening(hsv, 3), 3);
 
         var objects = DetectObjects(hsv);
 
@@ -598,7 +602,7 @@ public class ImageProcessingService : IImageProcessingService
                 hsv[r, c].V = 1;
             }
 
-            coverColor = (coverColor + 30) % 350;
+            coverColor = (coverColor + 30) % 360;
         }
         image.WritePixels(hsv
             //.Cover(new PixelHsv(330, 0.3f, 0.3f), new PixelHsv(360, 1, 1), new PixelHsv(110, 0.95f, 0.95f))
@@ -639,14 +643,23 @@ public class ImageProcessingService : IImageProcessingService
     public void RemoveNoise(Bitmap bitmap)
     {
         using var image = new BitmapLockAdapter(bitmap);
-        var matrix = image.ReadPixels();
+        var matrix = image.ReadPixels().AsHsv();
+        Predicate<PixelHsv> predicate = p => p.IsWithinBounds(new PixelHsv(0, 0f, 0), new PixelHsv(60, 0.5f, 1)) ||
+                                     p.IsWithinBounds(new PixelHsv(200, 0f, 0), new PixelHsv(360, 0.5f, 1));
 
-        //image.WritePixels(
-        //    ImageHelpers.MorphologicalClosing(
-        //        ImageHelpers.MorphologicalOpening(matrix)
-        //    )
-        //);
+        MarkPixels(matrix, predicate);
+        var result = ImageHelpers.MorphologicalClosing(
+                ImageHelpers.MorphologicalOpening(matrix));
+        for (int i = 0; i < result.GetLength(0); i++)
+            for (int j = 0; j < result.GetLength(1); j++)
+                if (result[i, j].IsMarked)
+                {
+                    result[i, j].S = 1;
+                    result[i, j].V = 1;
 
+                }
+
+        image.WritePixels(result.AsRgb());
     }
 
     public void ShowHue(Bitmap bitmap)
@@ -658,6 +671,7 @@ public class ImageProcessingService : IImageProcessingService
         {
             for(int j=0; j< hsv.GetLength(1); j++)
             {
+                //hsv[i, j].H = 360;
                 hsv[i, j].S = 1;
                 hsv[i, j].V = 1;
             }
