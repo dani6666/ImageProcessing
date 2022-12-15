@@ -81,21 +81,17 @@ public class ImageProcessingService : IImageProcessingService
         var coordinatesToCheck = new Queue<Point>();
         coordinatesToCheck.Enqueue(new Point(startingRow, startingColumn));
 
-        var mergingRange = Math.Max(2, pixels.GetLength(0)/100);
+        var mergingRange = Math.Max(2, pixels.GetLength(0)/300);
 
         do
         {
             var (row, column) = coordinatesToCheck.Dequeue();
             var index = result.BinarySearch(new Point(row, column));
 
-            if (index >= 0 || !pixels[row, column].IsMarked)
+            if (index >= 0)
                 continue;
 
             result.Insert(~index, new Point(row, column));
-            if (!pixels[row, column].IsMarked)
-            {
-                continue;
-            }
 
             for (int i = -mergingRange; i <= mergingRange; i++)
             {
@@ -108,8 +104,29 @@ public class ImageProcessingService : IImageProcessingService
 
                     var point = new Point(checkedRow, checkedColumn);
                     if (checkedRow < rowsCount - 1 && checkedRow >= 0 &&
-                        checkedColumn < columnsCount - 1 && checkedColumn >= 0)
+                        checkedColumn < columnsCount - 1 && checkedColumn >= 0 &&
+                        pixels[checkedRow, checkedColumn].IsMarked)
+                    {
+                        var tempI = i;
+                        var tempJ = j;
+                        while(tempI != 0 && tempJ != 0)
+                        {
+                            if (tempI > 0)
+                                tempI--;
+                            else
+                                tempI++;
+
+                            if (tempJ > 0)
+                                tempJ--;
+                            else
+                                tempJ++;
+
+                            //pixels[row + tempI, column + tempJ].IsMarked = true;
+                            //var p = new Point(row + tempI, column + tempJ);
+                            //coordinatesToCheck.Enqueue(p);
+                        }
                         coordinatesToCheck.Enqueue(point);
+                    }
                 }
             }
 
@@ -581,9 +598,9 @@ public class ImageProcessingService : IImageProcessingService
                                              p.IsWithinBounds(new PixelHsv(200, 0f, 0), new PixelHsv(360, 0.5f, 1));
 
         MarkPixels(hsv, predicate);
-
-        hsv = ImageHelpers.MorphologicalClosing(
-            ImageHelpers.MorphologicalOpening(hsv, 3), 3);
+        //hsv = ImageHelpers.MorphologicalOpening(hsv, 3,15);
+        hsv = ImageHelpers.Dilation(
+            ImageHelpers.MorphologicalOpening(hsv, 5, 10), 15);
 
         var objects = DetectObjects(hsv);
 

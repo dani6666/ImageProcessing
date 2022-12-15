@@ -119,16 +119,16 @@ namespace ImageProcessing.Core.Services
          * smoothing contours, breaks elements smaller than kernel
         */
 
-        public static PixelHsv[,] MorphologicalOpening(PixelHsv[,] pixels, int kernelSize = 4)
+        public static PixelHsv[,] MorphologicalOpening(PixelHsv[,] pixels, int erosionKernelSize = 4, int dilationKernelSize =4)
         {
-            return Dilation(Erosion(pixels, kernelSize), kernelSize);
+            return Dilation(Erosion(pixels, erosionKernelSize), dilationKernelSize);
         }
         /** 
          * fuses openings smaller than kernel
         */
-        public static PixelHsv[,] MorphologicalClosing(PixelHsv[,] pixels, int kernelSize = 4)
+        public static PixelHsv[,] MorphologicalClosing(PixelHsv[,] pixels, int erosionKernelSize = 4, int dilationKernelSize = 4)
         {
-            return Erosion(Dilation(pixels, kernelSize), kernelSize);
+            return Erosion(Dilation(pixels, dilationKernelSize), erosionKernelSize);
         }
 
         public static bool[,] FindMask(PixelHsv[,] pixels, PixelHsv lower, PixelHsv upper)
