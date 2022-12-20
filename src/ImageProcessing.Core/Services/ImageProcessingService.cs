@@ -81,17 +81,19 @@ public class ImageProcessingService : IImageProcessingService
         var coordinatesToCheck = new Queue<Point>();
         coordinatesToCheck.Enqueue(new Point(startingRow, startingColumn));
 
-        var mergingRange = Math.Max(2, pixels.GetLength(0)/300);
+        var mergingRange = Math.Max(2, pixels.GetLength(0)/200);
 
         do
         {
-            var (row, column) = coordinatesToCheck.Dequeue();
-            var index = result.BinarySearch(new Point(row, column));
+            var point = coordinatesToCheck.Dequeue();
+            var index = result.BinarySearch(point);
 
             if (index >= 0)
                 continue;
 
-            result.Insert(~index, new Point(row, column));
+            result.Insert(~index, point);
+
+            var (row, column) = point;
 
             for (int i = -mergingRange; i <= mergingRange; i++)
             {
@@ -102,30 +104,34 @@ public class ImageProcessingService : IImageProcessingService
                     var checkedRow = row + i;
                     var checkedColumn = column + j;
 
-                    var point = new Point(checkedRow, checkedColumn);
                     if (checkedRow < rowsCount - 1 && checkedRow >= 0 &&
                         checkedColumn < columnsCount - 1 && checkedColumn >= 0 &&
                         pixels[checkedRow, checkedColumn].IsMarked)
                     {
                         var tempI = i;
                         var tempJ = j;
-                        while(tempI != 0 && tempJ != 0)
+                        while(tempI != 0 || tempJ != 0)
                         {
                             if (tempI > 0)
                                 tempI--;
-                            else
+                            else if(tempI < 0)
                                 tempI++;
 
                             if (tempJ > 0)
                                 tempJ--;
-                            else
+                            else if(tempJ < 0)
                                 tempJ++;
 
-                            //pixels[row + tempI, column + tempJ].IsMarked = true;
-                            //var p = new Point(row + tempI, column + tempJ);
-                            //coordinatesToCheck.Enqueue(p);
+                            pixels[row + tempI, column + tempJ].IsMarked = true;
+                            var p = new Point(row + tempI, column + tempJ);
+
+                            var pIndex = result.BinarySearch(p);
+                            if (pIndex >= 0)
+                                continue;
+
+                            result.Insert(~pIndex, p);
                         }
-                        coordinatesToCheck.Enqueue(point);
+                        coordinatesToCheck.Enqueue(new Point(checkedRow, checkedColumn));
                     }
                 }
             }
