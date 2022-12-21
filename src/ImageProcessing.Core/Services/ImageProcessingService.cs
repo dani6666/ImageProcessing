@@ -318,6 +318,32 @@ public class ImageProcessingService : IImageProcessingService
         System.Drawing.Rectangle rect = new System.Drawing.Rectangle(new System.Drawing.Point(drawingCenter.X - size.Width / 2, drawingCenter.Y - size.Height / 2), size);
         return true;
     }
+    
+    private double EllipseRate(List<Point> obj, PixelHsv[,] pixels, Predicate<PixelHsv> condition)
+    {
+        var (center, radius) = FindBoundingCircle(obj, pixels, condition);
+        var (p1, p2, _) = GetExtremePoints(obj, pixels, condition);
+
+        var smallerRadius = radius;
+        while (radius * smallerRadius * Math.PI * 0.90 > obj.Count)
+            smallerRadius--;
+
+        if (smallerRadius == 0)
+            return 0;
+
+        if (p2.Row > p1.Row)
+            (p1, p2) = (p2, p1);
+
+        var angle = (float)(/*Math.Abs(*/Math.Atan2(p1.Row - p2.Row, p1.Column - p2.Column))/*)*/;
+
+        if (angle > Math.PI / 2)
+            angle -= (float)Math.PI / 2;
+        else
+            angle += (float)Math.PI / 2;
+        
+        var count = obj.Count(p => IsInElipse(p, center, radius, smallerRadius, angle));
+        return (double) count / obj.Count;
+    }
 
     private bool IsInElipse(Point givenPoint, Point elipseCenter, int biggerRadius, int smallerRadius, float angle)
     {
@@ -607,23 +633,24 @@ public class ImageProcessingService : IImageProcessingService
         //hsv = ImageHelpers.MorphologicalOpening(hsv, 3,15);
         hsv = ImageHelpers.Dilation(
             ImageHelpers.MorphologicalOpening(hsv, 5, 10), 15);
-
-        var objects = DetectObjects(hsv);
-
+        
+        var threshold = (image.Width / 100) * (image.Height / 100);
+        var obj = DetectObjects(hsv)
+            .Where(x => x.Count >= threshold)
+            .MaxBy(x => x.Count);
+        
         var coverColor = 10;
-        foreach (var obj in objects)
+        if (obj != null)
         {
-            //var isElipse = GetBoundingCircle(obj, hsv, predicate);
-            //if(ellipse != null)
-            //ellipses.Add(ellipse);
-
-            //if (isElipse)
-            foreach (var (r, c) in obj)
-            {
-                hsv[r, c].H = coverColor;
-                hsv[r, c].S = 1;
-                hsv[r, c].V = 1;
-            }
+            var ellipseRate = EllipseRate(obj, hsv, predicate);
+            
+            if (ellipseRate > 0.8)
+                foreach (var (r, c) in obj)
+                {
+                    hsv[r, c].H = coverColor;
+                    hsv[r, c].S = 1;
+                    hsv[r, c].V = 1;
+                }
 
             coverColor = (coverColor + 30) % 360;
         }

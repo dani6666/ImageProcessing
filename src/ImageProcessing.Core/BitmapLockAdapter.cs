@@ -10,6 +10,9 @@ namespace ImageProcessing.Core;
 
 internal class BitmapLockAdapter : IDisposable
 {
+    public int Width => _data.Width;
+    public int Height => _data.Height;
+    
     private readonly Bitmap _bitmap;
     private readonly BitmapData _data;
     private byte[] _buffer;
