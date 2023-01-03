@@ -25,4 +25,5 @@ public class PixelRgb : IPixel
         var color = Color.FromArgb(R, G, B);
         return new PixelHsv(color.GetHue(), max == 0 ? 0 : 1f - (1f * min / max), max / 255f);
     } 
+
 }

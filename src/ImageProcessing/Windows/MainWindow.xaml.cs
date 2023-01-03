@@ -3,8 +3,10 @@ using Microsoft.Win32;
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
 using Brushes = System.Drawing.Brushes;
 using Color = System.Drawing.Color;
@@ -97,18 +99,53 @@ namespace ImageProcessing.Windows
         {
             if (_bitmap is null) return;
 
-            // var rand = new Random();
-            // _imageProcessingService.DrawRectangle(_bitmap,
-            //     new Rectangle(rand.Next(0, _bitmap.Width),
-            //             rand.Next(0, _bitmap.Height),
-            //             rand.Next(100, 400),
-            //             rand.Next(100, 500)),
-            //     Color.FromArgb(255, 0, 0),
-            //     true);
-            // OriginalImage.Source = _bitmap.ToBitmapImage();
+            //var rand = new Random();
+            //_imageProcessingService.DrawRectangle(_bitmap,
+            //    new Rectangle(rand.Next(0, _bitmap.Width),
+            //            rand.Next(0, _bitmap.Height),
+            //            rand.Next(100, 400),
+            //            rand.Next(100, 500)),
+            //    Color.FromArgb(255, 0, 0),
+            //    true);
+            //OriginalImage.Source = _bitmap.ToBitmapImage();
 
             var bitmap = _bitmap.Clone(new Rectangle(0, 0, _bitmap.Width, _bitmap.Height), _bitmap.PixelFormat);
             _imageProcessingService.FindRocks(bitmap);
+            ProcessedImage.Source = bitmap.ToBitmapImage();
+        }
+
+        private void HideRocks_Click(object sender, RoutedEventArgs e)
+        {
+            if (_bitmap is null) return;
+
+            var bitmap = _bitmap.Clone(new Rectangle(0, 0, _bitmap.Width, _bitmap.Height), _bitmap.PixelFormat);
+             _imageProcessingService.HideRocks(bitmap);
+            ProcessedImage.Source = bitmap.ToBitmapImage();
+        }
+
+        private void SaveOutput_Click(object sender, RoutedEventArgs e)
+        {
+            if (_bitmap is null) return;
+
+            OpenFileDialog folderBrowser = new OpenFileDialog();
+            folderBrowser.ValidateNames = false;
+            folderBrowser.CheckFileExists = false;
+            folderBrowser.CheckPathExists = true;
+            folderBrowser.FileName = "hidden.png";
+            if (folderBrowser.ShowDialog() != true) return;
+
+            BitmapEncoder encoder = new PngBitmapEncoder();
+
+            encoder.Frames.Add(BitmapFrame.Create((BitmapSource)ProcessedImage.Source));
+            using (FileStream stream = new FileStream(folderBrowser.FileName, FileMode.Create))
+                encoder.Save(stream);
+        }
+
+        private void FindHiddenRocks_Click(object sender, RoutedEventArgs e)
+        {
+            if (_bitmap is null) return;
+            var bitmap = _bitmap.Clone(new Rectangle(0, 0, _bitmap.Width, _bitmap.Height), _bitmap.PixelFormat);
+            _imageProcessingService.FindHiddenRocks(bitmap);
             ProcessedImage.Source = bitmap.ToBitmapImage();
         }
 

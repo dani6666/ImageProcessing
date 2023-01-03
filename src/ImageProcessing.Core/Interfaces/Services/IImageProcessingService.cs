@@ -12,6 +12,9 @@ public interface IImageProcessingService
     void FindTriangles(Bitmap bitmap);
     void RemoveNoise(Bitmap pixels);
     void FindRocks(Bitmap bitmap);
+    void FindHiddenRocks(Bitmap bitmap);
+    void HideRocks(Bitmap bitmap);
+
     Dictionary<(PixelHsv, PixelHsv), int> GetColorStats(Bitmap bitmap, int numOfBuckets);
     void ShowHue(Bitmap bitmap);
 }
