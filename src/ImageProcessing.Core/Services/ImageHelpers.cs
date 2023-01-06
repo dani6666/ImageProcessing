@@ -170,5 +170,16 @@ namespace ImageProcessing.Core.Services
                 }
             return histogram;
         }
+
+        internal static List<PixelHsv> CollectPixels(this PixelHsv[,] pixels, Predicate<PixelHsv> predicate)
+        {
+            List<PixelHsv> collectedPixels = new List<PixelHsv>();
+            foreach(var pixel in pixels)
+            {
+                if (predicate(pixel))
+                    collectedPixels.Add(pixel);
+            }
+            return collectedPixels;
+        }
     }
 }

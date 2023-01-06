@@ -4,7 +4,10 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics.X86;
 using System.Security.Cryptography;
+using System.Text;
+using static System.Net.Mime.MediaTypeNames;
 using Point = ImageProcessing.Core.Model.Point;
 using Rectangle = ImageProcessing.Core.Model.Rectangle;
 
@@ -44,7 +47,7 @@ public class ImageProcessingService : IImageProcessingService
         for (int i = 0; i < obj.Count; i++)
         {
             var p = obj[i];
-            if (p.Row != 0 && p.Row != pixels.GetLength(0) - 1 && p.Column != 0 && p.Column != pixels.GetLength(1) -1 &&
+            if (p.Row != 0 && p.Row != pixels.GetLength(0) - 1 && p.Column != 0 && p.Column != pixels.GetLength(1) - 1 &&
                 condition(pixels[p.Row, p.Column - 1]) &&
                 condition(pixels[p.Row, p.Column + 1]) &&
                 condition(pixels[p.Row - 1, p.Column]) &&
@@ -81,7 +84,7 @@ public class ImageProcessingService : IImageProcessingService
         var coordinatesToCheck = new Queue<Point>();
         coordinatesToCheck.Enqueue(new Point(startingRow, startingColumn));
 
-        var mergingRange = Math.Max(2, pixels.GetLength(0)/200);
+        var mergingRange = Math.Max(2, pixels.GetLength(0) / 200);
 
         do
         {
@@ -99,7 +102,7 @@ public class ImageProcessingService : IImageProcessingService
             {
                 for (int j = -mergingRange; j <= mergingRange; j++)
                 {
-                    if(i == 0 && j == 0) continue;
+                    if (i == 0 && j == 0) continue;
 
                     var checkedRow = row + i;
                     var checkedColumn = column + j;
@@ -110,16 +113,16 @@ public class ImageProcessingService : IImageProcessingService
                     {
                         var tempI = i;
                         var tempJ = j;
-                        while(tempI != 0 || tempJ != 0)
+                        while (tempI != 0 || tempJ != 0)
                         {
                             if (tempI > 0)
                                 tempI--;
-                            else if(tempI < 0)
+                            else if (tempI < 0)
                                 tempI++;
 
                             if (tempJ > 0)
                                 tempJ--;
-                            else if(tempJ < 0)
+                            else if (tempJ < 0)
                                 tempJ++;
 
                             pixels[row + tempI, column + tempJ].IsMarked = true;
@@ -318,7 +321,7 @@ public class ImageProcessingService : IImageProcessingService
         System.Drawing.Rectangle rect = new System.Drawing.Rectangle(new System.Drawing.Point(drawingCenter.X - size.Width / 2, drawingCenter.Y - size.Height / 2), size);
         return true;
     }
-    
+
     private double EllipseRate(List<Point> obj, PixelHsv[,] pixels, Predicate<PixelHsv> condition)
     {
         var (center, radius) = FindBoundingCircle(obj, pixels, condition);
@@ -340,9 +343,9 @@ public class ImageProcessingService : IImageProcessingService
             angle -= (float)Math.PI / 2;
         else
             angle += (float)Math.PI / 2;
-        
+
         var count = obj.Count(p => IsInElipse(p, center, radius, smallerRadius, angle));
-        return (double) count / obj.Count;
+        return (double)count / obj.Count;
     }
 
     private bool IsInElipse(Point givenPoint, Point elipseCenter, int biggerRadius, int smallerRadius, float angle)
@@ -367,7 +370,7 @@ public class ImageProcessingService : IImageProcessingService
 
         foreach (var p in obj)
         {
-            if (p.Row != 0 && p.Row != pixels.GetLength(0) - 1 && p.Column != 0 && p.Column != pixels.GetLength(1) -1 &&
+            if (p.Row != 0 && p.Row != pixels.GetLength(0) - 1 && p.Column != 0 && p.Column != pixels.GetLength(1) - 1 &&
                 condition(pixels[p.Row, p.Column - 1]) &&
                 condition(pixels[p.Row, p.Column + 1]) &&
                 condition(pixels[p.Row - 1, p.Column]) &&
@@ -621,6 +624,79 @@ public class ImageProcessingService : IImageProcessingService
         }
     }
 
+    public void HideRocks(Bitmap bitmap)
+    {
+        using var image = new BitmapLockAdapter(bitmap);
+        var rgb = image.ReadPixels();
+        var hsv = rgb.AsHsv();
+        Predicate<PixelHsv> predicate = p => p.IsWithinBounds(new PixelHsv(65, 0f, 0), new PixelHsv(195, 1f, 1f));
+        var backgroundPixels = ImageHelpers.CollectPixels(hsv, predicate);
+
+        var hueMean = backgroundPixels.Average(p => p.H);
+        var hueStd = Math.Sqrt(backgroundPixels.Average(p => Math.Pow(p.H - hueMean, 2)));
+        var hueDist = new NormalDistribution(hueMean, hueStd);
+
+        var satMean = backgroundPixels.Average(p => p.S);
+        var satStd = Math.Sqrt(backgroundPixels.Average(p => Math.Pow(p.S - satMean, 2)));
+        var satDist = new NormalDistribution(satMean, satStd);
+
+        var valueMean = backgroundPixels.Average(p => p.V);
+        var valueStd = Math.Sqrt(backgroundPixels.Average(p => Math.Pow(p.V - valueMean, 2)));
+        var valueDist = new NormalDistribution(valueMean, valueStd);
+
+
+        predicate = p => p.IsWithinBounds(new PixelHsv(0, 0f, 0), new PixelHsv(60, 0.5f, 1)) ||
+                                     p.IsWithinBounds(new PixelHsv(200, 0f, 0), new PixelHsv(360, 0.5f, 1));
+
+        MarkPixels(hsv, predicate);
+
+        hsv = ImageHelpers.Dilation(
+            ImageHelpers.MorphologicalOpening(hsv, 5, 10), 15);
+
+        var threshold = (image.Width / 100) * (image.Height / 100);
+        var obj = DetectObjects(hsv)
+            .Where(x => x.Count >= threshold)
+            .MaxBy(x => x.Count);
+
+        if (obj != null)
+        {
+            var ellipseRate = EllipseRate(obj, hsv, predicate);
+
+            if (ellipseRate > 0.8)
+                foreach (var (r, c) in obj)
+                {
+                    var h = Math.Min(Math.Max((int)hueDist.Sample(),0), 360);
+                    var s = Math.Min(Math.Max((float)satDist.Sample(), 0), 1);
+                    var v = Math.Min(Math.Max((float)valueDist.Sample(), 0), 1);
+                    var pRGB = new PixelHsv(h, s, v).AsRgb();
+
+                    var binary = Convert.ToString(pRGB.R, 2).PadLeft(3, '0');
+                    var sb = new StringBuilder(binary);
+                    sb[binary.Length -1] = '1';
+                    sb[binary.Length - 2] = '1';
+                    sb[binary.Length - 3] = '1';
+                    pRGB.R = Convert.ToByte(sb.ToString(), 2);
+
+                    binary = Convert.ToString(pRGB.G, 2).PadLeft(3, '0');
+                    sb = new StringBuilder(binary);
+                    sb[binary.Length - 1] = '1';
+                    sb[binary.Length - 2] = '1';
+                    sb[binary.Length - 3] = '1';
+                    pRGB.G = Convert.ToByte(sb.ToString(), 2);
+
+                    binary = Convert.ToString(pRGB.B, 2).PadLeft(3, '0');
+                    sb = new StringBuilder(binary);
+                    sb[binary.Length - 1] = '1';
+                    sb[binary.Length - 2] = '1';
+                    sb[binary.Length - 3] = '1';
+                    pRGB.B = Convert.ToByte(sb.ToString(), 2);
+
+                    rgb[r, c] = pRGB;
+                }
+        }
+        image.WritePixels(rgb);
+    }
+
     public void FindRocks(Bitmap bitmap)
     {
         using var image = new BitmapLockAdapter(bitmap);
@@ -630,7 +706,6 @@ public class ImageProcessingService : IImageProcessingService
                                              p.IsWithinBounds(new PixelHsv(200, 0f, 0), new PixelHsv(360, 0.5f, 1));
 
         MarkPixels(hsv, predicate);
-        //hsv = ImageHelpers.MorphologicalOpening(hsv, 3,15);
         hsv = ImageHelpers.Dilation(
             ImageHelpers.MorphologicalOpening(hsv, 5, 10), 15);
         
@@ -661,6 +736,33 @@ public class ImageProcessingService : IImageProcessingService
         );
     }
 
+    public void FindHiddenRocks(Bitmap bitmap)
+    {
+        using var image = new BitmapLockAdapter(bitmap);
+
+        var rgb = image.ReadPixels();
+        Predicate<PixelRgb> predicate = p => 
+            Convert.ToString(p.R, 2).EndsWith("111")
+            && Convert.ToString(p.G, 2).EndsWith("111")
+            && Convert.ToString(p.B, 2).EndsWith("111");
+
+        var rowsCount = rgb.GetLength(0);
+        var colsCount = rgb.GetLength(1);
+        for (var r = 0; r < rowsCount; r++)
+        {
+            for (var c = 0; c < colsCount; c++)
+            {
+                if (predicate(rgb[r, c]))
+                {
+                    rgb[r, c].R = 255;
+                    rgb[r, c].G = 0;
+                    rgb[r, c].B = 0;
+                }
+            }
+        }
+        image.WritePixels(rgb);
+    }
+
     public void MarkPixels(PixelHsv[,] pixels, Predicate<PixelHsv> condition)
     {
         var rowsCount = pixels.GetLength(0);
@@ -674,21 +776,6 @@ public class ImageProcessingService : IImageProcessingService
             }
         }
     }
-
-    //public void DrawRectangle(Bitmap bitmap, System.Drawing.Rectangle rectangle, Color color, bool fill)
-    //{
-    //    using var graphics = Graphics.FromImage(bitmap);
-    //    if (fill)
-    //    {
-    //        using var brush = new SolidBrush(color);
-    //        graphics.FillRectangle(brush, rectangle);
-    //    }
-    //    else
-    //    {
-    //        using var pen = new Pen(color, 4);
-    //        graphics.DrawRectangle(pen, rectangle);
-    //    }
-    //}
 
     public void RemoveNoise(Bitmap bitmap)
     {
