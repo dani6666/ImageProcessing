@@ -647,7 +647,7 @@ public class ImageProcessingService : IImageProcessingService
         var valueDist = new NormalDistribution(valueMean, valueStd);
 
 
-        predicate = p => p.IsWithinBounds(new PixelHsv(0, 0f, 0), new PixelHsv(60, 0.5f, 1)) ||
+        predicate = p => p.IsWithinBounds(new PixelHsv(0, 0f, 0), new PixelHsv(65, 0.6f, 1)) ||
                                      p.IsWithinBounds(new PixelHsv(200, 0f, 0), new PixelHsv(360, 0.5f, 1));
 
         MarkPixels(hsv, predicate);
