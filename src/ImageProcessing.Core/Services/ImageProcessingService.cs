@@ -27,7 +27,7 @@ public class ImageProcessingService : IImageProcessingService
             {
                 if (pixels[r, c].IsMarked && !result.Any(o => o.BinarySearch(new Point(r, c)) >= 0))
                 {
-                    result.Add(DetectObject(pixels, r, c));
+                    result.Add(DetectObject(pixels, r, c, result));
                 }
             }
         }
@@ -35,8 +35,8 @@ public class ImageProcessingService : IImageProcessingService
         return result;
     }
 
-    private static List<Point> DetectObject(PixelHsv[,] pixels, int row, int column) =>
-        DetectObject(pixels, row, column, new List<Point>());
+    private static List<Point> DetectObject(PixelHsv[,] pixels, int row, int column, List<List<Point>> restOfResults) =>
+        DetectObject(pixels, row, column, restOfResults, new List<Point>());
 
     private (Point extremeP1, Point extremeP2, int distance) GetExtremePoints(List<Point> obj, PixelHsv[,] pixels, Predicate<PixelHsv> condition)
     {
@@ -76,7 +76,7 @@ public class ImageProcessingService : IImageProcessingService
 
         return (extremeP1, extremeP2, longestDistance);
     }
-    private static List<Point> DetectObject(PixelHsv[,] pixels, int startingRow, int startingColumn, List<Point> result)
+    private static List<Point> DetectObject(PixelHsv[,] pixels, int startingRow, int startingColumn, List<List<Point>> restOfResults, List<Point> result)
     {
         var rowsCount = pixels.GetLength(0);
         var columnsCount = pixels.GetLength(1);
@@ -91,7 +91,7 @@ public class ImageProcessingService : IImageProcessingService
             var point = coordinatesToCheck.Dequeue();
             var index = result.BinarySearch(point);
 
-            if (index >= 0)
+            if (index >= 0 || restOfResults.Any(r => r.BinarySearch(point) >= 0))
                 continue;
 
             result.Insert(~index, point);
@@ -128,11 +128,13 @@ public class ImageProcessingService : IImageProcessingService
                             pixels[row + tempI, column + tempJ].IsMarked = true;
                             var p = new Point(row + tempI, column + tempJ);
 
-                            var pIndex = result.BinarySearch(p);
-                            if (pIndex >= 0)
-                                continue;
+                            coordinatesToCheck.Enqueue(p);
 
-                            result.Insert(~pIndex, p);
+                            //var pIndex = result.BinarySearch(p);
+                            //if (pIndex >= 0 || restOfResults.Any(r => r.BinarySearch(point) >= 0))
+                            //    continue;
+
+                            //result.Insert(~pIndex, p);
                         }
                         coordinatesToCheck.Enqueue(new Point(checkedRow, checkedColumn));
                     }
@@ -645,7 +647,7 @@ public class ImageProcessingService : IImageProcessingService
         var valueDist = new NormalDistribution(valueMean, valueStd);
 
 
-        predicate = p => p.IsWithinBounds(new PixelHsv(0, 0f, 0), new PixelHsv(60, 0.5f, 1)) ||
+        predicate = p => p.IsWithinBounds(new PixelHsv(0, 0f, 0), new PixelHsv(65, 0.6f, 1)) ||
                                      p.IsWithinBounds(new PixelHsv(200, 0f, 0), new PixelHsv(360, 0.5f, 1));
 
         MarkPixels(hsv, predicate);
@@ -653,12 +655,16 @@ public class ImageProcessingService : IImageProcessingService
         hsv = ImageHelpers.Dilation(
             ImageHelpers.MorphologicalOpening(hsv, 5, 10), 15);
 
-        var threshold = (image.Width / 100) * (image.Height / 100);
-        var obj = DetectObjects(hsv)
-            .Where(x => x.Count >= threshold)
-            .MaxBy(x => x.Count);
+        var objects = DetectObjects(hsv);
 
-        if (obj != null)
+        var averageSize = objects.Average(o => o.Count);
+
+        if (objects.Count > 10)
+            objects = objects.Where(o => o.Count > 5 * averageSize).ToList();
+        else
+            objects = objects.Where(o => o.Count > averageSize).ToList();
+
+        foreach (var obj in objects)
         {
             var ellipseRate = EllipseRate(obj, hsv, predicate);
 
@@ -710,12 +716,21 @@ public class ImageProcessingService : IImageProcessingService
             ImageHelpers.MorphologicalOpening(hsv, 5, 10), 15);
         
         var threshold = (image.Width / 100) * (image.Height / 100);
-        var obj = DetectObjects(hsv)
-            .Where(x => x.Count >= threshold)
-            .MaxBy(x => x.Count);
-        
+        //var obj = DetectObjects(hsv)
+        //    .Where(x => x.Count >= threshold)
+        //    .MaxBy(x => x.Count);
+
+        var objects = DetectObjects(hsv);
+
+        var averageSize = objects.Average(o => o.Count);
+
+        if(objects.Count > 10)
+            objects = objects.Where(o => o.Count > 5*averageSize).ToList();
+        else
+            objects = objects.Where(o => o.Count > averageSize).ToList();
+
         var coverColor = 10;
-        if (obj != null)
+        foreach (var obj in objects)
         {
             var ellipseRate = EllipseRate(obj, hsv, predicate);
             
